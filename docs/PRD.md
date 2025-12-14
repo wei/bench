@@ -6,41 +6,9 @@ Status: Draft
 
 Date: December 14, 2025
 
-## 1\. Executive Summary
-
-Bench is a web-based tool designed to streamline the judging and verification process for large-scale hackathons. By ingesting project data from Devpost and source code from GitHub, the system utilizes AI agents to automate technical due diligence (validity, timing, code complexity) and verify eligibility for specific prize categories (e.g., MLH prizes).
-
-## 2\. User Personas
-
--   Hackathon Admin/Manager: Responsible for setting up the event, importing submissions, and ensuring all projects adhere to the rules.
-
--   Judge: Responsible for reviewing valid projects, filtering by prize categories, and shortlisting winners.
-
-
-## 3\. Functional Requirements
-
-### Epic 1: Import from Devpost & Roster Creation
-
-Goal: Allow users to instantiate a hackathon event and populate it with project data via CSV.
-
-ID
-
-Requirement
-
-Description
-
-Notes
-# Product Requirement Document: Hackathon AI Auditor
-
-Version: 1.0
-
-Status: Draft
-
-Date: December 14, 2025
-
 ## 1. Executive Summary
 
-The Hackathon AI Auditor is a web-based tool designed to streamline the judging and verification process for large-scale hackathons. By ingesting project data from Devpost and source code from GitHub, the system utilizes AI agents to automate technical due diligence (validity, timing, code complexity) and verify eligibility for specific prize categories (e.g., MLH prizes).
+Bench is a web-based tool designed to streamline the judging and verification process for large-scale hackathons. By ingesting project data from Devpost and source code from GitHub, the system utilizes AI agents to automate technical due diligence (validity, timing, code complexity) and verify eligibility for specific prize categories (e.g., MLH prizes).
 
 ## 2. User Personas
 
