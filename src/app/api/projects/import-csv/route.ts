@@ -1,0 +1,224 @@
+import { NextResponse } from "next/server";
+import Papa from "papaparse";
+
+import type { Database } from "@/database.types";
+import { createClient } from "@/lib/supabase/server";
+
+type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
+type CsvRecord = Record<string, string>;
+type PrizeCategory = {
+  slug: string;
+  name: string;
+};
+
+export async function POST(request: Request) {
+  try {
+    const formData = await request.formData();
+    const file = formData.get("file");
+    const eventId = formData.get("event_id");
+
+    if (typeof eventId !== "string" || !eventId.trim()) {
+      return NextResponse.json(
+        { error: "event_id is required" },
+        { status: 400 },
+      );
+    }
+
+    if (!(file instanceof File)) {
+      return NextResponse.json(
+        { error: "file is required (multipart/form-data)" },
+        { status: 400 },
+      );
+    }
+
+    const csvText = await file.text();
+    const records = parseCsv(csvText);
+
+    if (!records.length) {
+      return NextResponse.json(
+        { error: "CSV appears to be empty" },
+        { status: 400 },
+      );
+    }
+
+    const supabase = await createClient();
+
+    const { data: prizeCategories, error: prizeError } = await supabase
+      .from("prize_categories")
+      .select("slug, name");
+
+    if (prizeError) {
+      console.error("Failed to fetch prize categories", prizeError);
+      return NextResponse.json(
+        { error: "Failed to fetch prize categories" },
+        { status: 500 },
+      );
+    }
+
+    const inserts: ProjectInsert[] = records
+      .filter((record) => {
+        const status = record["Project Status"]?.trim();
+        return (
+          status === "Submitted (Gallery/Visible)" &&
+          Object.values(record).some((value) => value?.trim().length > 0)
+        );
+      })
+      .map((record) =>
+        mapRecordToProject(eventId.trim(), record, prizeCategories ?? []),
+      );
+
+    if (!inserts.length) {
+      return NextResponse.json(
+        {
+          error:
+            'No eligible rows found (Project Status must be "Submitted (Gallery/Visible)")',
+        },
+        { status: 400 },
+      );
+    }
+
+    const chunkSize = 500;
+    let inserted = 0;
+
+    for (let i = 0; i < inserts.length; i += chunkSize) {
+      const chunk = inserts.slice(i, i + chunkSize);
+      const { error } = await supabase.from("projects").insert(chunk);
+      if (error) {
+        console.error("Failed to insert projects chunk", error);
+        return NextResponse.json(
+          { error: "Failed to upload projects", details: error.message },
+          { status: 500 },
+        );
+      }
+      inserted += chunk.length;
+    }
+
+    return NextResponse.json({ event_id: eventId, inserted });
+  } catch (error) {
+    console.error("Unexpected error importing projects", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
+function mapRecordToProject(
+  eventId: string,
+  record: CsvRecord,
+  prizeCategories: PrizeCategory[],
+): ProjectInsert {
+  const csvRow: Record<string, string> = {};
+  Object.entries(record).forEach(([key, value]) => {
+    csvRow[key] = value ?? "";
+  });
+
+  const project: ProjectInsert = {
+    event_id: eventId,
+    csv_row: csvRow,
+    built_with: "",
+    opt_in_prizes: "",
+    try_it_out_links: [],
+    standardized_opt_in_prizes: [],
+    tech_stack: [],
+    prize_results: {},
+  };
+
+  project.project_title = record["Project Title"] || null;
+  project.submission_url = record["Submission Url"] || null;
+  project.about_the_project = record["About The Project"] || null;
+  project.video_demo_link = record["Video Demo Link"] || null;
+  project.opt_in_prizes = record["Opt-In Prizes"]?.trim() || "";
+  project.built_with = record["Built With"]?.trim() || "";
+  project.submitter_first_name = record["Submitter First Name"] || null;
+  project.submitter_last_name = record["Submitter Last Name"] || null;
+  project.submitter_email = record["Submitter Email"] || null;
+  project.notes = record["Notes"] || null;
+
+  project.project_created_at = parseDate(record["Project Created At"]);
+
+  const tryItOutRaw = record['"Try it out" Links'] ?? "";
+  const tryItOutGithubLinks = extractGithubLinks(tryItOutRaw);
+  project.try_it_out_links = tryItOutGithubLinks;
+
+  project.github_url = tryItOutGithubLinks[0] || null;
+
+  const additionalTeamMembers = parseNumber(
+    record["Additional Team Member Count"] ?? "",
+  );
+  project.team_size = (additionalTeamMembers ?? 0) + 1;
+
+  project.standardized_opt_in_prizes = matchPrizeCategories(
+    project.opt_in_prizes,
+    prizeCategories,
+  );
+
+  return project;
+}
+
+function parseCsv(text: string) {
+  const result = Papa.parse<CsvRecord>(text, {
+    header: true,
+    skipEmptyLines: true,
+  });
+
+  if (result.errors?.length) {
+    console.error("CSV parse errors", result.errors);
+  }
+
+  return result.data;
+}
+
+function extractGithubLinks(value: string) {
+  return parseList(value).filter((url) => isGithubUrl(url));
+}
+
+function parseNumber(value: string) {
+  if (!value.trim()) return null;
+  const parsed = Number.parseFloat(value);
+  return Number.isNaN(parsed) ? null : parsed;
+}
+
+function parseDate(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const parsed = Date.parse(trimmed);
+  if (Number.isNaN(parsed)) return null;
+  return new Date(parsed).toISOString();
+}
+
+function parseList(value: string) {
+  return value
+    .split(/[\n,]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function isGithubUrl(value: string) {
+  if (!value.trim()) return false;
+  const prefixed = value.startsWith("http") ? value : `https://${value}`;
+  try {
+    const url = new URL(prefixed);
+    return url.hostname.toLowerCase().includes("github.com");
+  } catch {
+    return false;
+  }
+}
+
+function matchPrizeCategories(
+  optInPrizes: string,
+  categories: PrizeCategory[],
+) {
+  if (!optInPrizes.trim()) return [];
+  const haystack = optInPrizes.toLowerCase();
+  const matched = new Set<string>();
+
+  categories.forEach((category) => {
+    const nameMatch = haystack.includes(category.name.toLowerCase());
+    if (nameMatch) {
+      matched.add(category.slug);
+    }
+  });
+
+  return Array.from(matched);
+}
