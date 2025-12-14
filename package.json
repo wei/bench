@@ -9,9 +9,11 @@
     "lint": "biome check --write",
     "format": "biome format --write",
     "type-check": "tsc --noEmit",
-    "check": "pnpm lint && pnpm format && pnpm type-check"
+    "check": "pnpm lint && pnpm format && pnpm type-check",
+    "gen-types": "supabase gen types typescript --project-id rthourrxcgxxrzrvnewg --schema public > src/database.types.ts"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.87.1",
     "next": "16.0.10",
     "react": "19.2.1",
     "react-dom": "19.2.1"
@@ -23,6 +25,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "lefthook": "^2.0.11",
+    "supabase": "^2.67.1",
     "tailwindcss": "^4",
     "typescript": "^5"
   }
