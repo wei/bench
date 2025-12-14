@@ -1,0 +1,29 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Next.js: debug dev server",
+      "runtimeExecutable": "pnpm", // or "pnpm"/"yarn"
+      "runtimeArgs": ["dev"],
+      "cwd": "${workspaceFolder}",
+      "port": 9229,
+      "console": "integratedTerminal",
+      "env": { "NODE_OPTIONS": "--inspect-brk=9229" }
+    },
+    {
+      "type": "chrome",
+      "request": "launch",
+      "name": "Next.js: debug client",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "Next.js: full-stack debug",
+      "configurations": ["Next.js: debug dev server", "Next.js: debug client"]
+    }
+  ]
+}
