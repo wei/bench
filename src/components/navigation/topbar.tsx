@@ -1,6 +1,5 @@
 "use client";
 
-import { Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { NotificationDrawer } from "@/components/navigation/notification-drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,18 +11,13 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { Button } from "@/components/ui/button";
 import type { Event, Project } from "@/lib/store";
-import { useStore } from "@/lib/store";
 
 interface TopBarProps {
   readonly selectedEvent?: Event;
   readonly selectedProject?: Project | null;
 }
-
 export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
-  const { theme, toggleTheme } = useStore();
-
   return (
     <header className="h-16 bg-white dark:bg-[#262626] border-b border-gray-200 dark:border-[#404040] flex items-center justify-between px-6">
       <Breadcrumb>
@@ -72,19 +66,6 @@ export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
 
       <div className="flex items-center gap-3">
         <NotificationDrawer />
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="rounded-full"
-          onClick={toggleTheme}
-        >
-          {theme === "light" ? (
-            <Moon className="w-5 h-5" />
-          ) : (
-            <Sun className="w-5 h-5" />
-          )}
-        </Button>
 
         <div className="flex items-center gap-2 ml-2">
           <Avatar className="w-8 h-8">

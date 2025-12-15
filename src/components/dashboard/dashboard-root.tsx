@@ -7,7 +7,13 @@ import { AppShell } from "@/components/app-shell";
 import { ProcessingModal } from "@/components/processing-modal";
 import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
 import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
-import { getEvents, getProjects, startProjectReview } from "@/lib/data-service";
+import { useRealtimeSubscription } from "@/hooks/use-realtime-subscription";
+import {
+  getEvents,
+  getPrizeCategories,
+  getProjects,
+  startProjectReview,
+} from "@/lib/data-service";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
 
@@ -47,11 +53,12 @@ export function DashboardRoot({ children }: DashboardRootProps) {
     projects,
     setEvents,
     setProjects,
+    setPrizeCategories,
     setSelectedEventId,
     addProjects,
     setProcessingProjects,
     setShowProcessingModal,
-    theme,
+
     addNotification,
   } = useStore();
 
@@ -60,6 +67,9 @@ export function DashboardRoot({ children }: DashboardRootProps) {
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   // Allow us to optimistically clear the event when navigating back to /events
   const [overrideEventId, setOverrideEventId] = useState<string | null>();
+
+  // Enable Realtime Subscription
+  useRealtimeSubscription();
 
   const routeEventId = useMemo(() => {
     if (!params?.eventId) return null;
@@ -75,15 +85,6 @@ export function DashboardRoot({ children }: DashboardRootProps) {
 
   const activeEventId = routeEventId ?? overrideEventId ?? null;
 
-  useEffect(() => {
-    const savedTheme = localStorage.getItem("theme") || "light";
-    document.documentElement.classList.toggle("dark", savedTheme === "dark");
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.classList.toggle("dark", theme === "dark");
-  }, [theme]);
-
   // Sync the selected event in the store with the incoming route param
   useEffect(() => {
     setSelectedEventId(routeEventId ?? null);
@@ -95,21 +96,26 @@ export function DashboardRoot({ children }: DashboardRootProps) {
     let isActive = true;
 
     async function loadData() {
-      setIsLoading(true);
+      // Only show loading on initial load if we don't have data
+      if (useStore.getState().events.length === 0) setIsLoading(true);
 
       try {
-        const [eventsData, projectsData] = await Promise.all([
-          getEvents(),
-          getProjects(routeEventId || undefined),
-        ]);
+        const [eventsData, projectsData, prizeCategoriesData] =
+          await Promise.all([
+            getEvents(),
+            getProjects(routeEventId || undefined),
+            getPrizeCategories(),
+          ]);
 
         if (!isActive) return;
 
         setEvents(eventsData);
         setProjects(projectsData);
+        setPrizeCategories(prizeCategoriesData);
       } catch (error) {
         if (!isActive) return;
         console.error("Failed to load dashboard data", error);
+        toast.error("Failed to load dashboard data");
       } finally {
         if (isActive) {
           setIsLoading(false);
@@ -122,7 +128,7 @@ export function DashboardRoot({ children }: DashboardRootProps) {
     return () => {
       isActive = false;
     };
-  }, [routeEventId, setEvents, setProjects]);
+  }, [routeEventId, setEvents, setProjects, setPrizeCategories]);
 
   // Preselect project from permalink
   useEffect(() => {

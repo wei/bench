@@ -4,6 +4,7 @@ import type { Enums, Tables } from "@/database.types";
 // Type aliases for cleaner code
 type Event = Tables<"events">;
 type Project = Tables<"projects">;
+type PrizeCategory = Tables<"prize_categories">;
 type ProjectProcessingStatus = Enums<"project_processing_status">;
 type ComplexityRating = Enums<"complexity_rating">;
 type NotificationType = "info" | "success" | "warning" | "error";
@@ -18,23 +19,25 @@ interface NotificationEntry {
 interface AppState {
   events: Event[];
   projects: Project[];
+  prizeCategories: PrizeCategory[];
   selectedEventId: string | null;
   isProcessing: boolean;
   processingProjects: string[];
   showProcessingModal: boolean;
-  theme: "light" | "dark";
+
   recentlyViewedProjects: string[];
   favoriteProjects: string[];
   notifications: NotificationEntry[];
 
   setEvents: (events: Event[]) => void;
   setProjects: (projects: Project[]) => void;
+  setPrizeCategories: (categories: PrizeCategory[]) => void;
   setSelectedEventId: (id: string | null) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
   addProjects: (projects: Project[]) => void;
   setProcessingProjects: (ids: string[]) => void;
   setShowProcessingModal: (open: boolean) => void;
-  toggleTheme: () => void;
+
   addRecentlyViewedProject: (projectId: string) => void;
   toggleFavoriteProject: (projectId: string) => void;
   addNotification: (entry: Omit<NotificationEntry, "id" | "timestamp">) => void;
@@ -43,14 +46,12 @@ interface AppState {
 export const useStore = create<AppState>((set) => ({
   events: [],
   projects: [],
+  prizeCategories: [],
   selectedEventId: null,
   isProcessing: false,
   processingProjects: [],
   showProcessingModal: false,
-  theme:
-    typeof window !== "undefined" && localStorage.getItem("theme") === "dark"
-      ? "dark"
-      : "light",
+
   recentlyViewedProjects:
     typeof window !== "undefined"
       ? JSON.parse(localStorage.getItem("recentlyViewedProjects") || "[]")
@@ -66,6 +67,7 @@ export const useStore = create<AppState>((set) => ({
 
   setEvents: (events) => set({ events }),
   setProjects: (projects) => set({ projects }),
+  setPrizeCategories: (prizeCategories) => set({ prizeCategories }),
   setSelectedEventId: (id) => set({ selectedEventId: id }),
   updateProject: (id, updates) =>
     set((state) => ({
@@ -79,15 +81,7 @@ export const useStore = create<AppState>((set) => ({
     })),
   setProcessingProjects: (ids) => set({ processingProjects: ids }),
   setShowProcessingModal: (open) => set({ showProcessingModal: open }),
-  toggleTheme: () =>
-    set((state) => {
-      const newTheme = state.theme === "light" ? "dark" : "light";
-      if (typeof window !== "undefined") {
-        localStorage.setItem("theme", newTheme);
-        document.documentElement.classList.toggle("dark", newTheme === "dark");
-      }
-      return { theme: newTheme };
-    }),
+
   addRecentlyViewedProject: (projectId) =>
     set((state) => {
       const updated = [
@@ -134,4 +128,5 @@ export type {
   ComplexityRating,
   NotificationEntry,
   NotificationType,
+  PrizeCategory,
 };
