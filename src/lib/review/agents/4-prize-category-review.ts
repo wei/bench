@@ -1,6 +1,7 @@
+import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getDoAI, getDoAIModelName } from "@/lib/ai/doai";
+// import { getDoAI, getDoAIModelName } from "@/lib/ai/doai";
 import { grepAny } from "@/lib/review/grep-tools";
 import {
   markPrizeProcessing,
@@ -156,9 +157,9 @@ export async function prizeCategoryReviewAgent(
   });
 
   try {
-    const doai = getDoAI();
+    // const doai = getDoAI();
     const { object } = await generateObject({
-      model: doai.chat(getDoAIModelName()),
+      model: google("gemini-2.5-flash"), //doai.chat(getDoAIModelName()),
       schema: prizeReviewSchema,
       system: buildPrizeCategorySystemPrompt(systemPrompt),
       prompt,

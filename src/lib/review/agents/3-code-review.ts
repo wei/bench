@@ -1,6 +1,7 @@
+import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
-import { getDoAI, getDoAIModelName } from "@/lib/ai/doai";
+// import { getDoAI, getDoAIModelName } from "@/lib/ai/doai";
 import { setProjectStatus } from "@/lib/review/status";
 import type { ReviewAgent } from "@/lib/review/types";
 import { codeReviewSystemPrompt } from "@/prompts/code-review";
@@ -60,9 +61,9 @@ export const codeReviewAgent: ReviewAgent<
   });
 
   try {
-    const doai = getDoAI();
+    // const doai = getDoAI();
     const { object } = await generateObject({
-      model: doai.chat(getDoAIModelName()),
+      model: google("gemini-2.5-flash"), //doai.chat(getDoAIModelName()),
       schema: codeReviewSchema,
       system: codeReviewSystemPrompt,
       prompt,
