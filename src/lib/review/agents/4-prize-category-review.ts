@@ -153,8 +153,7 @@ export async function prizeCategoryReviewAgent(
   const markedProcessing = await markPrizeProcessing(context, prizeSlug);
   if (!markedProcessing) return { ok: false as const };
 
-  // TODO: Move get prize_category out of fetchPrizeCategorySystemPrompt
-  // create Grep agent method
+  // TODO: create Grep agent method
 
   const { data: prizeCategory, error } = await context.supabase
     .from("prize_categories")
