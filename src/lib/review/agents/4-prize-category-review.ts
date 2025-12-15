@@ -167,6 +167,9 @@ export async function prizeCategoryReviewAgent(
   const markedProcessing = await markPrizeProcessing(context, prizeSlug);
   if (!markedProcessing) return { ok: false as const };
 
+  // TODO: Move get prize_category out of fetchPrizeCategorySystemPrompt
+  // create Grep agent method
+
   const systemPrompt = await fetchPrizeCategorySystemPrompt(context, prizeSlug);
 
   if (!systemPrompt) {
