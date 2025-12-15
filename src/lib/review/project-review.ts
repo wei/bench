@@ -1,5 +1,6 @@
 import { validateGithubRepoAgent } from "@/lib/review/agents/1-validate-github-repo";
 import { hackingTimelineAgent } from "@/lib/review/agents/2-hacking-timeline";
+import { codeReviewAgent } from "@/lib/review/agents/3-code-review";
 import { createGithub } from "@/lib/review/github";
 import {
   createSupabase,
@@ -34,7 +35,11 @@ export async function startProjectReview(project: ProjectWithEvent) {
     return;
   }
 
+  const { ok: codeReviewOk } = await codeReviewAgent(context);
+  if (!codeReviewOk) {
+    return;
+  }
+
   console.debug(`Project ID ${project.id} passed all review agents.`);
-  console.debug(JSON.stringify(context.repoInfo, null, 2));
   await setProjectStatus(supabase, project.id, "processed", null);
 }

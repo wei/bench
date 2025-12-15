@@ -14,10 +14,12 @@
     "gen-types": "supabase gen types typescript --project-id rthourrxcgxxrzrvnewg --schema public > src/database.types.ts"
   },
   "dependencies": {
+    "@ai-sdk/google": "^2.0.46",
     "@octokit/rest": "^22.0.1",
     "@radix-ui/react-avatar": "^1.1.11",
     "@radix-ui/react-progress": "^1.1.8",
     "@supabase/supabase-js": "^2.87.1",
+    "ai": "^5.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.561.0",
@@ -27,7 +29,8 @@
     "react": "19.2.1",
     "react-dom": "19.2.1",
     "repomix": "^1.10.1",
-    "tailwind-merge": "^3.4.0"
+    "tailwind-merge": "^3.4.0",
+    "zod": "^3.24.1"
   },
   "devDependencies": {
     "@biomejs/biome": "2.2.0",
