@@ -133,7 +133,7 @@ function mapRecordToProject(
   project.submitter_first_name = record["Submitter First Name"] || null;
   project.submitter_last_name = record["Submitter Last Name"] || null;
   project.submitter_email = record["Submitter Email"] || null;
-  project.notes = record["Notes"] || null;
+  project.notes = record.Notes || null;
 
   project.project_created_at = parseDate(record["Project Created At"]);
 
