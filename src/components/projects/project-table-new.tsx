@@ -84,7 +84,15 @@ export function ProjectTableNew({
   );
 
   React.useEffect(() => {
-    getPrizeCategories().then(setPrizeCategories);
+    let isActive = true;
+    getPrizeCategories().then((categories) => {
+      if (isActive) {
+        setPrizeCategories(categories);
+      }
+    });
+    return () => {
+      isActive = false;
+    };
   }, []);
 
   const prizeCategoryMap = React.useMemo(() => {

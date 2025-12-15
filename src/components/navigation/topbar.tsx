@@ -1,6 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
+import Link from "next/link";
 import { NotificationDrawer } from "@/components/navigation/notification-drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -21,18 +22,20 @@ interface TopBarProps {
 }
 
 export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
-  const { setSelectedEventId, theme, toggleTheme } = useStore();
+  const { theme, toggleTheme } = useStore();
 
   return (
     <header className="h-16 bg-white dark:bg-[#262626] border-b border-gray-200 dark:border-[#404040] flex items-center justify-between px-6">
       <Breadcrumb>
         <BreadcrumbList>
           <BreadcrumbItem>
-            <BreadcrumbLink
-              onClick={() => setSelectedEventId(null)}
-              className="cursor-pointer hover:text-(--mlh-red)"
-            >
-              Events
+            <BreadcrumbLink asChild>
+              <Link
+                href="/events"
+                className="cursor-pointer hover:text-(--mlh-red)"
+              >
+                Events
+              </Link>
             </BreadcrumbLink>
           </BreadcrumbItem>
 
@@ -41,8 +44,13 @@ export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 {selectedProject ? (
-                  <BreadcrumbLink className="cursor-pointer hover:text-(--mlh-red)">
-                    {selectedEvent.name}
+                  <BreadcrumbLink asChild>
+                    <Link
+                      href={`/events/${selectedEvent.id}`}
+                      className="cursor-pointer hover:text-(--mlh-red)"
+                    >
+                      {selectedEvent.name}
+                    </Link>
                   </BreadcrumbLink>
                 ) : (
                   <BreadcrumbPage>{selectedEvent.name}</BreadcrumbPage>

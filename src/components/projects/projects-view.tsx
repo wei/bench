@@ -12,6 +12,7 @@ interface ProjectsViewProps {
   readonly onBatchRun: (projectIds: string[]) => void;
   readonly onImport: () => void;
   readonly onProjectClick: (project: Project) => void;
+  readonly eventId?: string | null;
 }
 
 export function ProjectsView({
@@ -19,6 +20,7 @@ export function ProjectsView({
   onBatchRun,
   onImport,
   onProjectClick,
+  eventId,
 }: ProjectsViewProps) {
   const {
     projects,
@@ -29,11 +31,14 @@ export function ProjectsView({
     setProcessingProjects,
   } = useStore();
 
-  const filteredProjects = selectedEventId
-    ? projects.filter((p) => p.event_id === selectedEventId)
+  const activeEventId = eventId ?? selectedEventId ?? null;
+
+  const filteredProjects = activeEventId
+    ? projects.filter((p) => p.event_id === activeEventId)
     : projects;
 
   useEffect(() => {
+    let isMounted = true;
     const supabase = createClient();
 
     const channel = supabase
@@ -42,6 +47,7 @@ export function ProjectsView({
         "postgres_changes",
         { event: "*", schema: "public", table: "projects" },
         (payload: RealtimePostgresChangesPayload<Project>): void => {
+          if (!isMounted) return;
           const newRecord = payload.new as Project | null;
           const oldRecord = payload.old as Project | null;
           const projectId = newRecord?.id || oldRecord?.id;
@@ -87,6 +93,7 @@ export function ProjectsView({
       .subscribe();
 
     return () => {
+      isMounted = false;
       supabase.removeChannel(channel);
     };
   }, [addProjects, setProjects, updateProject, setProcessingProjects]);

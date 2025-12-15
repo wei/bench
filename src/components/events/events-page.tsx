@@ -2,16 +2,13 @@
 
 import { Calendar, ImageOff, MapPin, Search } from "lucide-react";
 import Image from "next/image";
+import Link from "next/link";
 import { useState } from "react";
 import { MonthRangePicker } from "@/components/month-range-picker";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useStore } from "@/lib/store";
-
-interface EventsPageProps {
-  readonly onEventSelect: (eventId: string) => void;
-}
 
 type EventStatus = {
   type: "upcoming" | "active" | "ended";
@@ -48,7 +45,7 @@ function EventImage({
   );
 }
 
-export function EventsPage({ onEventSelect }: EventsPageProps) {
+export function EventsPage() {
   const { events, projects } = useStore();
   const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<{
@@ -172,99 +169,101 @@ export function EventsPage({ onEventSelect }: EventsPageProps) {
           const projectCount = getProjectCount(event.id);
           const eventStatus = getEventStatus(event.starts_at, event.ends_at);
 
+          const href = `/events/${event.id}`;
           return (
-            <Card
-              key={event.id}
-              className="cursor-pointer hover:shadow-lg transition-all hover:border-primary focus-visible:outline-none focus-visible:ring-0 outline-none overflow-hidden"
-              onClick={() => onEventSelect(event.id)}
-            >
-              <div className="flex gap-4 p-6">
-                {/* Hackathon Image - Square on the left */}
-                <EventImage logoUrl={event.logo_url} eventName={event.name} />
+            <Link key={event.id} href={href} className="block">
+              <Card className="cursor-pointer hover:shadow-lg transition-all hover:border-primary focus-visible:outline-none focus-visible:ring-0 outline-none overflow-hidden">
+                <div className="flex gap-4 p-6">
+                  {/* Hackathon Image - Square on the left */}
+                  <EventImage logoUrl={event.logo_url} eventName={event.name} />
 
-                {/* Content Section */}
-                <div className="flex-1 min-w-0 flex flex-col gap-3">
-                  {/* Header with Title and Badge */}
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="text-lg leading-tight line-clamp-2">
-                      {event.name}
-                    </CardTitle>
-                    {(() => {
-                      const badgeVariant =
-                        eventStatus.type === "active" ||
-                        eventStatus.type === "upcoming"
-                          ? "default"
-                          : "secondary";
-                      let badgeClassName = "shrink-0";
-                      if (eventStatus.type === "active") {
-                        badgeClassName = "bg-green-500 shrink-0";
-                      } else if (eventStatus.type === "upcoming") {
-                        badgeClassName = "bg-blue-500 shrink-0";
-                      }
-                      return (
-                        <Badge
-                          variant={badgeVariant}
-                          className={badgeClassName}
-                        >
-                          {eventStatus.label}
-                        </Badge>
-                      );
-                    })()}
-                  </div>
-
-                  {/* Date Range */}
-                  {event.starts_at && event.ends_at && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Calendar className="w-4 h-4 shrink-0" />
-                      <span className="truncate">
-                        {(() => {
-                          const start = new Date(event.starts_at);
-                          const end = new Date(event.ends_at);
-                          const startMonth = start.toLocaleDateString("en-US", {
-                            month: "short",
-                          });
-                          const endMonth = end.toLocaleDateString("en-US", {
-                            month: "short",
-                          });
-                          const startDay = start.getDate();
-                          const endDay = end.getDate();
-                          const year = start.getFullYear();
-
-                          if (startMonth === endMonth) {
-                            return `${startMonth} ${startDay} - ${endDay}, ${year}`;
-                          }
-                          return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
-                        })()}
-                      </span>
+                  {/* Content Section */}
+                  <div className="flex-1 min-w-0 flex flex-col gap-3">
+                    {/* Header with Title and Badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-lg leading-tight line-clamp-2">
+                        {event.name}
+                      </CardTitle>
+                      {(() => {
+                        const badgeVariant =
+                          eventStatus.type === "active" ||
+                          eventStatus.type === "upcoming"
+                            ? "default"
+                            : "secondary";
+                        let badgeClassName = "shrink-0";
+                        if (eventStatus.type === "active") {
+                          badgeClassName = "bg-green-500 shrink-0";
+                        } else if (eventStatus.type === "upcoming") {
+                          badgeClassName = "bg-blue-500 shrink-0";
+                        }
+                        return (
+                          <Badge
+                            variant={badgeVariant}
+                            className={badgeClassName}
+                          >
+                            {eventStatus.label}
+                          </Badge>
+                        );
+                      })()}
                     </div>
-                  )}
 
-                  {/* Location (City, Country) */}
-                  {(event as { city?: string; country?: string }).city ||
-                  (event as { city?: string; country?: string }).country ? (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <MapPin className="w-4 h-4 shrink-0" />
-                      <span className="truncate">
-                        {[
-                          (event as { city?: string }).city,
-                          (event as { country?: string }).country,
-                        ]
-                          .filter(Boolean)
-                          .join(", ")}
-                      </span>
+                    {/* Date Range */}
+                    {event.starts_at && event.ends_at && (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="w-4 h-4 shrink-0" />
+                        <span className="truncate">
+                          {(() => {
+                            const start = new Date(event.starts_at);
+                            const end = new Date(event.ends_at);
+                            const startMonth = start.toLocaleDateString(
+                              "en-US",
+                              {
+                                month: "short",
+                              },
+                            );
+                            const endMonth = end.toLocaleDateString("en-US", {
+                              month: "short",
+                            });
+                            const startDay = start.getDate();
+                            const endDay = end.getDate();
+                            const year = start.getFullYear();
+
+                            if (startMonth === endMonth) {
+                              return `${startMonth} ${startDay} - ${endDay}, ${year}`;
+                            }
+                            return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+                          })()}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Location (City, Country) */}
+                    {(event as { city?: string; country?: string }).city ||
+                    (event as { city?: string; country?: string }).country ? (
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 shrink-0" />
+                        <span className="truncate">
+                          {[
+                            (event as { city?: string }).city,
+                            (event as { country?: string }).country,
+                          ]
+                            .filter(Boolean)
+                            .join(", ")}
+                        </span>
+                      </div>
+                    ) : null}
+
+                    {/* Project Count */}
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-sm text-gray-600">Projects</span>
+                      <Badge variant="outline" className="font-semibold">
+                        {projectCount}
+                      </Badge>
                     </div>
-                  ) : null}
-
-                  {/* Project Count */}
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <span className="text-sm text-gray-600">Projects</span>
-                    <Badge variant="outline" className="font-semibold">
-                      {projectCount}
-                    </Badge>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </Link>
           );
         })}
       </div>
