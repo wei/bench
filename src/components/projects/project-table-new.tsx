@@ -415,7 +415,6 @@ export function ProjectTableNew({
   });
 
   const selectedRows = table.getFilteredSelectedRowModel().rows;
-  const selectedIds = selectedRows.map((row) => row.original.id);
 
   const handleRunAll = () => {
     const allIds = filteredData.map((p) => p.id);
@@ -427,21 +426,9 @@ export function ProjectTableNew({
     filteredData.every((p) => p.status === "processed");
   const hasNoProjects = filteredData.length === 0;
 
-  const actionBar = (
-    <div className="flex items-center justify-between">
-      <div className="flex-1 text-sm text-muted-foreground">
-        {selectedIds.length > 0 && (
-          <span>
-            {selectedIds.length} of {filteredData.length} row(s) selected.
-          </span>
-        )}
-      </div>
-    </div>
-  );
-
   return (
     <div className="space-y-4">
-      <DataTable table={table} actionBar={actionBar}>
+      <DataTable table={table}>
         <DataTableToolbar
           table={table}
           onRunAll={handleRunAll}
