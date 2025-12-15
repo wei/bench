@@ -3,5 +3,5 @@
 import { Toaster } from "sonner";
 
 export function NotificationProvider() {
-  return <Toaster position="top-right" richColors closeButton />;
+  return <Toaster position="bottom-right" richColors closeButton />;
 }
