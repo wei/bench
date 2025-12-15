@@ -2,10 +2,36 @@ import type { Database } from "@/database.types";
 import type { SupabaseClient } from "@/lib/review/types";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
 
+type PrizeResult = { status: string; message: string };
+
 export async function markProcessing(
   supabase: SupabaseClient,
   projectId: string,
-) {
+): Promise<{ ok: boolean; prizeResults: Record<string, PrizeResult> }> {
+  const { data: projectRow, error: fetchError } = await supabase
+    .from("projects")
+    .select("standardized_opt_in_prizes, prize_results")
+    .eq("id", projectId)
+    .maybeSingle();
+
+  if (fetchError || !projectRow) {
+    console.error("Failed to load project for processing", {
+      projectId,
+      error: fetchError,
+    });
+    return { ok: false, prizeResults: {} };
+  }
+
+  const prizeSlugs = projectRow.standardized_opt_in_prizes ?? [];
+  const pendingPrizeResults: Record<string, PrizeResult> = {};
+
+  for (const prizeSlug of prizeSlugs) {
+    pendingPrizeResults[prizeSlug] = {
+      status: "pending",
+      message: "Pending review.",
+    };
+  }
+
   const startedAt = new Date().toISOString();
   const { error } = await supabase
     .from("projects")
@@ -13,15 +39,21 @@ export async function markProcessing(
       status: "processing:code_review",
       process_started_at: startedAt,
       project_processing_status_message: null,
+      code_to_description_similarity_score: null,
+      code_to_description_similarity_description: null,
+      technical_complexity: null,
+      technical_complexity_message: null,
+      tech_stack: [],
+      prize_results: pendingPrizeResults,
     })
     .eq("id", projectId);
 
   if (error) {
     console.error("Failed to mark project as processing", error);
-    return false;
+    return { ok: false, prizeResults: {} };
   }
 
-  return true;
+  return { ok: true, prizeResults: pendingPrizeResults };
 }
 
 export async function setProjectStatus(
@@ -52,4 +84,28 @@ export async function setProjectStatus(
 
 export async function createSupabase() {
   return createSupabaseClient();
+}
+
+export async function resetAgentAugmentedFields(
+  supabase: SupabaseClient,
+  projectId: string,
+) {
+  const { error } = await supabase
+    .from("projects")
+    .update({
+      code_to_description_similarity_score: null,
+      code_to_description_similarity_description: null,
+      technical_complexity: null,
+      technical_complexity_message: null,
+      tech_stack: [],
+      prize_results: {},
+    })
+    .eq("id", projectId);
+
+  if (error) {
+    console.error("Failed to reset agent-augmented fields", error);
+    return false;
+  }
+
+  return true;
 }
