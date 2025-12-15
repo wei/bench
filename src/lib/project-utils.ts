@@ -103,11 +103,12 @@ export function getMetrics(project: Project): {
 }
 
 // Parse prize_results
-export function parsePrizeResults(
-  prizeResults: unknown,
-): Record<
+export function parsePrizeResults(prizeResults: unknown): Record<
   string,
-  { status: "valid" | "invalid"; reason: string; confidence?: number }
+  {
+    status: "valid" | "invalid";
+    message: string;
+  }
 > | null {
   if (
     !prizeResults ||
@@ -118,7 +119,7 @@ export function parsePrizeResults(
   }
   return prizeResults as Record<
     string,
-    { status: "valid" | "invalid"; reason: string; confidence?: number }
+    { status: "valid" | "invalid"; message: string }
   >;
 }
 

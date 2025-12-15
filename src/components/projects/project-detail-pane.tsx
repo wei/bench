@@ -25,6 +25,7 @@ import {
   getCodeReview,
   getDevpostUrl,
   getMetrics,
+  getPrizeTracks,
   parsePrizeResults,
 } from "@/lib/project-utils";
 import type { Project } from "@/lib/store";
@@ -230,45 +231,91 @@ export function ProjectDetailPane({
           )}
 
           {/* Prize Tracks (eligibility results) */}
-          {prizeResults && Object.keys(prizeResults).length > 0 && (
-            <div className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Gift className="w-5 h-5 text-(--mlh-yellow)" />
-                <h3 className="font-semibold text-(--mlh-dark-grey) dark:text-white">
-                  Prize Tracks
-                </h3>
-              </div>
+          {(() => {
+            const prizeTracks = getPrizeTracks(project);
+            const showPrizeTracks =
+              prizeTracks.length > 0 ||
+              (prizeResults && Object.keys(prizeResults).length > 0);
+            const isProcessing = project.status.startsWith("processing");
+
+            if (!showPrizeTracks) return null;
+
+            return (
               <div className="space-y-3">
-                {Object.entries(prizeResults).map(([category, result]) => (
-                  <div
-                    key={category}
-                    className="border rounded-lg p-3 bg-gray-50 dark:bg-[#262626]"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium text-sm text-(--mlh-dark-grey) dark:text-white">
-                        {prizeCategoryMap[category] || category}
-                      </h4>
-                      <Badge
-                        variant={
-                          result.status === "valid" ? "default" : "destructive"
-                        }
-                        className={
-                          result.status === "valid"
-                            ? "bg-(--mlh-teal) text-white dark:bg-mlh-teal dark:text-white"
-                            : "bg-red-500 text-white dark:bg-red-500 dark:text-white"
-                        }
+                <div className="flex items-center gap-2">
+                  <Gift className="w-5 h-5 text-(--mlh-yellow)" />
+                  <h3 className="font-semibold text-(--mlh-dark-grey) dark:text-white">
+                    Prize Tracks
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {prizeTracks.map((trackSlug) => {
+                    const result = prizeResults
+                      ? prizeResults[trackSlug]
+                      : null;
+                    const displayName =
+                      prizeCategoryMap[trackSlug] || trackSlug;
+
+                    let status:
+                      | "valid"
+                      | "invalid"
+                      | "pending"
+                      | "processing"
+                      | "error" = "pending";
+                    let color =
+                      "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
+                    let reason = "Assessment pending";
+
+                    if (result) {
+                      if (result.status === "valid") {
+                        status = "valid";
+                        color =
+                          "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+                        reason = result.message || "Criteria met";
+                      } else if (result.status === "invalid") {
+                        status = "invalid";
+                        color =
+                          "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
+                        reason = result.message || "Criteria not met";
+                      } else if ((result as any).status === "error") {
+                        status = "error";
+                        color =
+                          "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+                        reason = result.message || "Error during assessment";
+                      }
+                    } else if (isProcessing) {
+                      status = "processing";
+                      color =
+                        "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 animate-pulse";
+                      reason = "Assessment in progress...";
+                    }
+
+                    return (
+                      <div
+                        key={trackSlug}
+                        className="border rounded-lg p-3 bg-gray-50 dark:bg-[#262626]"
                       >
-                        {result.status.toUpperCase()}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                      {result.reason}
-                    </p>
-                  </div>
-                ))}
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium text-sm text-(--mlh-dark-grey) dark:text-white">
+                            {displayName}
+                          </h4>
+                          <Badge
+                            variant="outline"
+                            className={`border-0 ${color}`}
+                          >
+                            {status.toUpperCase()}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                          {reason}
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           <div className="grid grid-cols-1 gap-6">
             {/* Metrics */}

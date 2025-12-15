@@ -134,7 +134,7 @@ export function ProjectDetailSheet({
                       </div>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      {result.reason}
+                      {result.message}
                     </p>
                   </div>
                 ))}

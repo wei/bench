@@ -12,6 +12,12 @@ import { GithubIcon } from "@/components/icons/github-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { Tables } from "@/database.types";
 import { useDataTable } from "@/hooks/use-data-table";
 import { getPrizeCategories } from "@/lib/data-service";
@@ -21,6 +27,7 @@ import {
   getPrizeTracks,
   getStatusColor,
   getStatusDescription,
+  parsePrizeResults,
 } from "@/lib/project-utils";
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 import { useStore } from "@/lib/store";
@@ -341,6 +348,86 @@ export function ProjectTableNew({
         size: 140,
       },
       {
+        id: "prize_results",
+        header: "Prize Results",
+        cell: ({ row }) => {
+          const project = row.original;
+          const prizeTracks = getPrizeTracks(project);
+          const results = parsePrizeResults(project.prize_results) || {};
+          const isProcessing = project.status.startsWith("processing");
+
+          return (
+            <div className="flex flex-wrap gap-1 max-w-[140px]">
+              <TooltipProvider>
+                {prizeTracks.length > 0 ? (
+                  prizeTracks.map((trackSlug) => {
+                    const result = results[trackSlug];
+                    const displayName = getPrizeDisplayName(trackSlug);
+
+                    let status:
+                      | "valid"
+                      | "invalid"
+                      | "pending"
+                      | "processing"
+                      | "error" = "pending";
+                    let color =
+                      "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
+                    let reason = "Assessment pending";
+
+                    if (result) {
+                      if (result.status === "valid") {
+                        status = "valid";
+                        color =
+                          "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+                        reason = result.message || "Criteria met";
+                      } else if (result.status === "invalid") {
+                        status = "invalid";
+                        color =
+                          "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
+                        reason = result.message || "Criteria not met";
+                      } else if ((result as any).status === "error") {
+                        status = "error";
+                        color =
+                          "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+                        reason = result.message || "Error during assessment";
+                      }
+                    } else if (isProcessing) {
+                      status = "processing";
+                      color =
+                        "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 animate-pulse";
+                      reason = "Assessment in progress...";
+                    }
+
+                    return (
+                      <Tooltip key={trackSlug}>
+                        <TooltipTrigger asChild>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs border-0 cursor-help ${color}`}
+                          >
+                            {displayName}
+                            {status === "valid" && " ✓"}
+                            {status === "invalid" && " ?"}
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-125 text-wrap wrap-break-word">
+                          <p className="font-semibold mb-1">{displayName}</p>
+                          <p>{reason}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    );
+                  })
+                ) : (
+                  <span className="text-xs text-muted-foreground">-</span>
+                )}
+              </TooltipProvider>
+            </div>
+          );
+        },
+        enableSorting: false,
+        size: 160,
+      },
+      {
         id: "tech_stack",
         accessorKey: "tech_stack",
         header: "Tech Stack",
@@ -349,18 +436,37 @@ export function ProjectTableNew({
           return (
             <div className="flex flex-wrap gap-1 max-w-[180px]">
               {techStack && techStack.length > 0 ? (
-                <>
+                <TooltipProvider>
                   {techStack.slice(0, 3).map((tech) => (
                     <Badge key={tech} variant="outline" className="text-xs">
                       {tech}
                     </Badge>
                   ))}
                   {techStack.length > 3 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{techStack.length - 3}
-                    </Badge>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Badge
+                          variant="outline"
+                          className="text-xs cursor-help hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                        >
+                          +{techStack.length - 3}
+                        </Badge>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <div className="flex flex-col gap-1">
+                          <p className="font-semibold text-xs mb-1">
+                            Additional Tech:
+                          </p>
+                          {techStack.slice(3).map((tech) => (
+                            <span key={tech} className="text-xs">
+                              {tech}
+                            </span>
+                          ))}
+                        </div>
+                      </TooltipContent>
+                    </Tooltip>
                   )}
-                </>
+                </TooltipProvider>
               ) : (
                 <span className="text-xs text-muted-foreground">
                   Not analyzed
