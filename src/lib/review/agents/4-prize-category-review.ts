@@ -7,7 +7,7 @@ import type { ReviewContext } from "@/lib/review/types";
 import { buildPrizeCategorySystemPrompt } from "@/prompts/prize-category-review";
 
 type PrizeReviewResult = {
-  status: "valid" | "invalid";
+  status: "valid" | "invalid" | "processing";
   message: string;
 };
 
@@ -45,32 +45,18 @@ Return only JSON with keys status and message. Base your decision solely on evid
 }
 
 async function fetchPrizeCategorySystemPrompt(
-  context: ReviewContext,
+  prizeCategory: {
+    slug: string;
+    system_prompt: string | null;
+  } | null,
   prizeSlug: string,
 ) {
-  const { data, error } = await context.supabase
-    .from("prize_categories")
-    .select("slug, system_prompt")
-    .eq("slug", prizeSlug)
-    .maybeSingle();
-
-  if (error) {
-    console.error("Failed to fetch prize category", { prizeSlug, error });
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "errored",
-      `Failed to fetch prize category ${prizeSlug}`,
-    );
-    return null;
-  }
-
-  if (!data) {
+  if (!prizeCategory) {
     console.warn(`Prize category not found for slug ${prizeSlug}`);
     return null;
   }
 
-  return data.system_prompt;
+  return prizeCategory.system_prompt;
 }
 
 async function markPrizeProcessing(context: ReviewContext, prizeSlug: string) {
@@ -170,7 +156,27 @@ export async function prizeCategoryReviewAgent(
   // TODO: Move get prize_category out of fetchPrizeCategorySystemPrompt
   // create Grep agent method
 
-  const systemPrompt = await fetchPrizeCategorySystemPrompt(context, prizeSlug);
+  const { data: prizeCategory, error } = await context.supabase
+    .from("prize_categories")
+    .select("slug, system_prompt")
+    .eq("slug", prizeSlug)
+    .maybeSingle();
+
+  if (error) {
+    console.error("Failed to fetch prize category", { prizeSlug, error });
+    await setProjectStatus(
+      context.supabase,
+      context.project.id,
+      "errored",
+      `Failed to fetch prize category ${prizeSlug}`,
+    );
+    return { ok: false as const };
+  }
+
+  const systemPrompt = await fetchPrizeCategorySystemPrompt(
+    prizeCategory,
+    prizeSlug,
+  );
 
   if (!systemPrompt) {
     // Record a placeholder result so the missing configuration is visible.
