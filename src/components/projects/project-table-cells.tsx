@@ -160,12 +160,15 @@ export function ActionsCell({
   readonly project: Project;
   readonly onRunAnalysis: (projectId: string) => void;
 }) {
+  const canRunAnalysis =
+    project.status === "unprocessed" || project.status === "processed";
+
   return (
     <Button
       size="sm"
       variant="outline"
       onClick={() => onRunAnalysis(project.id)}
-      disabled={project.status.startsWith("processing")}
+      disabled={!canRunAnalysis}
       className="gap-2"
     >
       <Play className="w-3 h-3" />

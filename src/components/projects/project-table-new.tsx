@@ -375,9 +375,8 @@ export function ProjectTableNew({
         id: "actions",
         cell: ({ row }) => {
           const status = row.original.status;
-          const isProcessing = status.startsWith("processing");
-          const isProcessed = status === "processed";
-          const label = isProcessed ? "Rerun" : "Run";
+          const disableAnalysis = status.startsWith("processing:code_review");
+          const label = status === "unprocessed" ? "Run" : "Re-run";
 
           return (
             <Button
@@ -385,7 +384,7 @@ export function ProjectTableNew({
               size="sm"
               className="gap-2"
               onClick={() => onRunAnalysis(row.original.id)}
-              disabled={isProcessing}
+              disabled={disableAnalysis}
             >
               <Play className="h-4 w-4" />
               {label}

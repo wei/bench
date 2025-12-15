@@ -65,6 +65,8 @@ export function ProjectDetailPane({
   const codeReview = getCodeReview(project);
   const metrics = getMetrics(project);
   const prizeResults = parsePrizeResults(project.prize_results);
+  const canRunAnalysis =
+    project.status === "unprocessed" || project.status === "processed";
 
   const metricsData = metrics
     ? [
@@ -100,6 +102,7 @@ export function ProjectDetailPane({
                 <Button
                   size="sm"
                   onClick={onRerun}
+                  disabled={!canRunAnalysis}
                   className="bg-(--mlh-blue) hover:bg-(--mlh-blue)/90 text-white gap-2"
                 >
                   <Play className="h-4 w-4" />

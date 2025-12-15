@@ -10,7 +10,7 @@ Rules:
 - If the code shows the required technology in use, respond with status "valid" and briefly explain the evidence.
 - If the code does NOT show the required technology, respond with status "invalid" and explain what is missing or contradictory in the code.
 - Do not invent files or behaviors that are not present in repo_code_pack.
-- The message must be concise (maximum 3 sentences).
+- The message must be concise (exactly 3 sentences).
 
 Output JSON only with keys: status, message.
 `.trim();
