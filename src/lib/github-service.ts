@@ -32,10 +32,10 @@ interface GitHubContributor {
  * Get the number of public repositories for a GitHub username
  */
 export async function getRepositoryCount(username: string): Promise<number> {
-  const token = process.env.GITHUB_PAT_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
 
   if (!token) {
-    throw new Error("GITHUB_PAT_TOKEN is not configured");
+    throw new Error("GITHUB_TOKEN is not configured");
   }
 
   try {
@@ -76,10 +76,10 @@ export async function getRepositoryContributors(
   username: string,
   repository: string,
 ): Promise<string[]> {
-  const token = process.env.GITHUB_PAT_TOKEN;
+  const token = process.env.GITHUB_TOKEN;
 
   if (!token) {
-    throw new Error("GITHUB_PAT_TOKEN is not configured");
+    throw new Error("GITHUB_TOKEN is not configured");
   }
 
   try {

@@ -23,6 +23,7 @@ create type project_processing_status as enum (
   'processing:prize_category_review',
   'invalid:github_inaccessible',
   'invalid:rule_violation',
+  'errored',
   'processed'
 );
 

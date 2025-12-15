@@ -133,15 +133,15 @@ function mapRecordToProject(
   project.submitter_first_name = record["Submitter First Name"] || null;
   project.submitter_last_name = record["Submitter Last Name"] || null;
   project.submitter_email = record["Submitter Email"] || null;
-  project.notes = record["Notes"] || null;
+  project.notes = record.Notes || null;
 
   project.project_created_at = parseDate(record["Project Created At"]);
 
   const tryItOutRaw = record['"Try it out" Links'] ?? "";
-  const tryItOutGithubLinks = extractGithubLinks(tryItOutRaw);
-  project.try_it_out_links = tryItOutGithubLinks;
+  const tryItOutAllLinks = parseList(tryItOutRaw).filter((url) => isUrl(url));
+  project.try_it_out_links = tryItOutAllLinks;
 
-  project.github_url = tryItOutGithubLinks[0] || null;
+  project.github_url = tryItOutAllLinks.find((url) => isGithubUrl(url)) || null;
 
   const additionalTeamMembers = parseNumber(
     record["Additional Team Member Count"] ?? "",
@@ -169,8 +169,15 @@ function parseCsv(text: string) {
   return result.data;
 }
 
-function extractGithubLinks(value: string) {
-  return parseList(value).filter((url) => isGithubUrl(url));
+function isUrl(value: string) {
+  if (!value.trim()) return false;
+  const prefixed = value.startsWith("http") ? value : `https://${value}`;
+  try {
+    const url = new URL(prefixed);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function parseNumber(value: string) {
