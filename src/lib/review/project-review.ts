@@ -61,6 +61,14 @@ export async function startProjectReview(project: ProjectWithEvent) {
 
   // Prize Category Agent Review sequencially
   for (const prizeSlug of project.standardized_opt_in_prizes || []) {
+    console.debug(`Starting prize category review for prize ${prizeSlug}.`);
+    await setProjectStatus(
+      supabase,
+      context.project.id,
+      "processing:prize_category_review",
+      `Processing prize: ${prizeSlug}`,
+    );
+
     const { ok: prizeOk } = await prizeCategoryReviewAgent(context, prizeSlug);
     if (!prizeOk) {
       return;

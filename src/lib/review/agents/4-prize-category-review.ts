@@ -73,6 +73,44 @@ async function fetchPrizeCategorySystemPrompt(
   return data.system_prompt;
 }
 
+async function markPrizeProcessing(context: ReviewContext, prizeSlug: string) {
+  const existing =
+    (context.project.prize_results as Record<
+      string,
+      PrizeReviewResult
+    > | null) ?? {};
+
+  const updatedPrizeResults = {
+    ...existing,
+    [prizeSlug]: {
+      status: "processing",
+      message: `Reviewing prize: ${prizeSlug}`,
+    },
+  };
+
+  const { error } = await context.supabase
+    .from("projects")
+    .update({ prize_results: updatedPrizeResults })
+    .eq("id", context.project.id);
+
+  if (error) {
+    console.error("Failed to set prize processing status", {
+      prizeSlug,
+      error,
+    });
+    await setProjectStatus(
+      context.supabase,
+      context.project.id,
+      "errored",
+      `Failed to set processing status for prize ${prizeSlug}`,
+    );
+    return false;
+  }
+
+  context.project.prize_results = updatedPrizeResults;
+  return true;
+}
+
 async function persistPrizeResult(
   context: ReviewContext,
   prizeSlug: string,
@@ -126,6 +164,9 @@ export async function prizeCategoryReviewAgent(
     return { ok: false as const };
   }
 
+  const markedProcessing = await markPrizeProcessing(context, prizeSlug);
+  if (!markedProcessing) return { ok: false as const };
+
   const systemPrompt = await fetchPrizeCategorySystemPrompt(context, prizeSlug);
 
   if (!systemPrompt) {
@@ -152,7 +193,7 @@ export async function prizeCategoryReviewAgent(
     });
 
     const data = object;
-    console.log(`Prize review result for ${prizeSlug}:`, data);
+    console.debug(`Prize review result for ${prizeSlug}:`, data);
 
     const recorded = await persistPrizeResult(context, prizeSlug, data);
     if (!recorded) return { ok: false as const };

@@ -69,7 +69,7 @@ export const codeReviewAgent: ReviewAgent<
 
     const data = object;
 
-    console.log("Code review agent generated results:", data);
+    console.debug("Code review agent generated results:", data);
 
     const { error } = await context.supabase
       .from("projects")
