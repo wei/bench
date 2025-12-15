@@ -7,6 +7,7 @@ import { AppShell } from "@/components/app-shell";
 import { ProcessingModal } from "@/components/processing-modal";
 import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
 import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useRealtimeSubscription } from "@/hooks/use-realtime-subscription";
 import {
   getEvents,
@@ -51,24 +52,28 @@ export function DashboardRoot({ children }: DashboardRootProps) {
   const {
     events,
     projects,
-    setEvents,
     setProjects,
     setPrizeCategories,
     setSelectedEventId,
     addProjects,
     setProcessingProjects,
     setShowProcessingModal,
-
     addNotification,
   } = useStore();
+  // Using next-themes for theme management instead of store
+  // const { theme } = useTheme(); // Assuming we want to use it, but for now just removing the broken store reference
 
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   // Allow us to optimistically clear the event when navigating back to /events
   const [overrideEventId, setOverrideEventId] = useState<string | null>();
 
   // Enable Realtime Subscription
+  // useRealtimeSubscription(); // Moving this call inside, or keeping it?
+  // Wait, useRealtimeSubscription needs to be updated first or we should call it here?
+  // The plan said "Update useRealtimeSubscription", but it's used here.
+  // Ideally, useDashboardData handles fetching, but useRealtimeSubscription handles updates.
+  // Let's keep useRealtimeSubscription call here for now, but we will modify it next.
   useRealtimeSubscription();
 
   const routeEventId = useMemo(() => {
@@ -85,50 +90,14 @@ export function DashboardRoot({ children }: DashboardRootProps) {
 
   const activeEventId = routeEventId ?? overrideEventId ?? null;
 
+  const { isLoading } = useDashboardData(activeEventId);
+
   // Sync the selected event in the store with the incoming route param
   useEffect(() => {
     setSelectedEventId(routeEventId ?? null);
     // Clear any optimistic override once the route param is authoritative
     setOverrideEventId(undefined);
   }, [routeEventId, setSelectedEventId]);
-
-  useEffect(() => {
-    let isActive = true;
-
-    async function loadData() {
-      // Only show loading on initial load if we don't have data
-      if (useStore.getState().events.length === 0) setIsLoading(true);
-
-      try {
-        const [eventsData, projectsData, prizeCategoriesData] =
-          await Promise.all([
-            getEvents(),
-            getProjects(routeEventId || undefined),
-            getPrizeCategories(),
-          ]);
-
-        if (!isActive) return;
-
-        setEvents(eventsData);
-        setProjects(projectsData);
-        setPrizeCategories(prizeCategoriesData);
-      } catch (error) {
-        if (!isActive) return;
-        console.error("Failed to load dashboard data", error);
-        toast.error("Failed to load dashboard data");
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    void loadData();
-
-    return () => {
-      isActive = false;
-    };
-  }, [routeEventId, setEvents, setProjects, setPrizeCategories]);
 
   // Preselect project from permalink
   useEffect(() => {
