@@ -75,6 +75,8 @@ export async function startProjectReview(project: ProjectWithEvent) {
     }
   }
 
-  console.debug(`Project ID ${project.id} passed all review agents.`);
+  console.debug(
+    `All review agents for Project ID ${project.id} has completed.`,
+  );
   await setProjectStatus(supabase, project.id, "processed", null);
 }

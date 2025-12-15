@@ -1,15 +1,14 @@
 import { google } from "@ai-sdk/google";
 import { generateObject } from "ai";
 import { z } from "zod";
-
+import { grepAny } from "@/lib/review/grep-tools";
+import {
+  markPrizeProcessing,
+  persistPrizeResult,
+} from "@/lib/review/prize-results";
 import { setProjectStatus } from "@/lib/review/status";
 import type { ReviewContext } from "@/lib/review/types";
 import { buildPrizeCategorySystemPrompt } from "@/prompts/prize-category-review";
-
-type PrizeReviewResult = {
-  status: "valid" | "invalid" | "processing";
-  message: string;
-};
 
 const prizeReviewSchema = z.object({
   status: z.enum(["valid", "invalid"]),
@@ -59,86 +58,12 @@ async function fetchPrizeCategorySystemPrompt(
   return prizeCategory.system_prompt;
 }
 
-async function markPrizeProcessing(context: ReviewContext, prizeSlug: string) {
-  const existing =
-    (context.project.prize_results as Record<
-      string,
-      PrizeReviewResult
-    > | null) ?? {};
-
-  const updatedPrizeResults = {
-    ...existing,
-    [prizeSlug]: {
-      status: "processing",
-      message: `Reviewing prize: ${prizeSlug}`,
-    },
-  };
-
-  const { error } = await context.supabase
-    .from("projects")
-    .update({ prize_results: updatedPrizeResults })
-    .eq("id", context.project.id);
-
-  if (error) {
-    console.error("Failed to set prize processing status", {
-      prizeSlug,
-      error,
-    });
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "errored",
-      `Failed to set processing status for prize ${prizeSlug}`,
-    );
-    return false;
-  }
-
-  context.project.prize_results = updatedPrizeResults;
-  return true;
-}
-
-async function persistPrizeResult(
-  context: ReviewContext,
-  prizeSlug: string,
-  result: PrizeReviewResult,
-) {
-  const existing = (context.project.prize_results ?? {}) as Record<
-    string,
-    PrizeReviewResult
-  >;
-
-  const updatedPrizeResults = {
-    ...existing,
-    [prizeSlug]: result,
-  };
-
-  const { error } = await context.supabase
-    .from("projects")
-    .update({ prize_results: updatedPrizeResults })
-    .eq("id", context.project.id);
-
-  if (error) {
-    console.error("Failed to persist prize review result", {
-      prizeSlug,
-      error,
-    });
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "errored",
-      `Failed to persist prize result for ${prizeSlug}`,
-    );
-    return false;
-  }
-
-  // Keep context in sync for downstream agents or further prize reviews.
-  context.project.prize_results = updatedPrizeResults;
-  return true;
-}
-
 export async function prizeCategoryReviewAgent(
   context: ReviewContext,
   prizeSlug: string,
+  options?: {
+    skipKeywordGrep?: boolean;
+  },
 ) {
   if (!context.repoInfo?.repoContent) {
     await setProjectStatus(
@@ -150,14 +75,9 @@ export async function prizeCategoryReviewAgent(
     return { ok: false as const };
   }
 
-  const markedProcessing = await markPrizeProcessing(context, prizeSlug);
-  if (!markedProcessing) return { ok: false as const };
-
-  // TODO: create Grep agent method
-
   const { data: prizeCategory, error } = await context.supabase
     .from("prize_categories")
-    .select("slug, system_prompt")
+    .select("slug, system_prompt, find_words")
     .eq("slug", prizeSlug)
     .maybeSingle();
 
@@ -170,6 +90,49 @@ export async function prizeCategoryReviewAgent(
       `Failed to fetch prize category ${prizeSlug}`,
     );
     return { ok: false as const };
+  }
+
+  const markedProcessing = await markPrizeProcessing(context, prizeSlug);
+  if (!markedProcessing) return { ok: false as const };
+
+  // Keyword grep: if find_words are configured and none match the repo, skip the AI review.
+  if (!options?.skipKeywordGrep) {
+    const repoContent = context.repoInfo.repoContent;
+    const findWords = prizeCategory?.find_words ?? [];
+
+    console.debug(`Prize grep check for ${prizeSlug}`, {
+      configuredWords: findWords.length,
+    });
+
+    if (findWords.length > 0) {
+      const hasMatchedWords = grepAny(repoContent, findWords);
+
+      if (!hasMatchedWords) {
+        const message = `Keyword check failed for ${prizeSlug}`;
+
+        console.debug(`Skipping AI prize review for ${prizeSlug}:`, {
+          status: "invalid",
+          message: `${message}`,
+        });
+
+        await setProjectStatus(
+          context.supabase,
+          context.project.id,
+          "processing:prize_category_review",
+          `Skipping prize ${prizeSlug}: ${message}`,
+        );
+
+        const recorded = await persistPrizeResult(context, prizeSlug, {
+          status: "invalid",
+          message,
+        });
+        return { ok: recorded };
+      }
+    }
+  } else {
+    console.debug(
+      `Prize grep check skipped for ${prizeSlug} (skipKeywordGrep=true)`,
+    );
   }
 
   const systemPrompt = await fetchPrizeCategorySystemPrompt(
