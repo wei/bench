@@ -8,11 +8,7 @@ import { ProcessingModal } from "@/components/processing-modal";
 import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
 import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
 import { ProjectsView } from "@/components/projects/projects-view";
-import {
-  simulateCodeReview,
-  simulatePrizeCategoryReview,
-} from "@/lib/analysis-mock-simulator";
-import { getEvents, getProjects, updateProject } from "@/lib/data-service";
+import { getEvents, getProjects, startProjectReview } from "@/lib/data-service";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
 
@@ -24,9 +20,9 @@ export default function DashboardPage() {
     setEvents,
     setProjects,
     setSelectedEventId,
-    updateProject: updateProjectInStore,
     addProjects,
     setProcessingProjects,
+    setShowProcessingModal,
     theme,
     addNotification,
   } = useStore();
@@ -59,74 +55,97 @@ export default function DashboardPage() {
     loadData();
   }, [setEvents, setProjects]);
 
+  const queueProcessingProjects = (projectIds: string[]) => {
+    const current = new Set(useStore.getState().processingProjects);
+    projectIds.forEach((id) => {
+      current.add(id);
+    });
+    setProcessingProjects(Array.from(current));
+  };
+
+  const dequeueProcessingProject = (projectId: string) => {
+    const { processingProjects } = useStore.getState();
+    if (!processingProjects.includes(projectId)) return;
+    setProcessingProjects(processingProjects.filter((id) => id !== projectId));
+  };
+
   const handleRunAnalysis = async (projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
     if (!project) return;
 
-    updateProjectInStore(projectId, { status: "processing:code_review" });
+    setShowProcessingModal(false);
+    setProcessingProjects(
+      useStore.getState().processingProjects.filter((id) => id !== projectId),
+    );
 
-    // Step 1: Code Review
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const codeReviewResults = await simulateCodeReview(project);
-    updateProjectInStore(projectId, codeReviewResults);
-
-    // Step 2: Prize Category Review
-    updateProjectInStore(projectId, {
-      status: "processing:prize_category_review",
-    });
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-    const prizeResults = await simulatePrizeCategoryReview(project);
-    updateProjectInStore(projectId, { ...prizeResults, status: "processed" });
-
-    // Update in Supabase if available
-    await updateProject(projectId, {
-      ...codeReviewResults,
-      ...prizeResults,
-      status: "processed",
-    });
+    try {
+      await startProjectReview(projectId);
+      toast.success(`Started review for ${project.project_title}`);
+      addNotification({
+        message: `Started review for ${project.project_title}`,
+        type: "info",
+      });
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Failed to start review";
+      dequeueProcessingProject(projectId);
+      toast.error(`Could not start review: ${message}`);
+      addNotification({
+        message: `Failed to start review for ${project.project_title}`,
+        type: "error",
+      });
+    }
   };
 
   const handleBatchRun = async (projectIds: string[]) => {
-    setProcessingProjects(projectIds);
+    if (projectIds.length === 0) return;
+
+    setShowProcessingModal(true);
+    queueProcessingProjects(projectIds);
 
     const projectNames = projectIds.map(
       (id) => projects.find((p) => p.id === id)?.project_title || "Unknown",
     );
 
-    // Show toast notification for start
-    if (projectIds.length === 1) {
-      toast.info(`Starting analysis for ${projectNames[0]}`);
-      addNotification({
-        message: `Starting analysis for ${projectNames[0]}`,
-        type: "info",
-      });
-    } else {
-      toast.info(`Starting analysis for ${projectIds.length} projects`);
-      addNotification({
-        message: `Starting analysis for ${projectIds.length} projects`,
-        type: "info",
-      });
-    }
+    const startMessage =
+      projectIds.length === 1
+        ? `Starting review for ${projectNames[0]}`
+        : `Starting review for ${projectIds.length} projects`;
 
-    // Process sequentially
-    for (const projectId of projectIds) {
-      await handleRunAnalysis(projectId);
-    }
+    toast.info(startMessage);
+    addNotification({ message: startMessage, type: "info" });
 
-    setProcessingProjects([]);
+    const results = await Promise.all(
+      projectIds.map(async (projectId) => {
+        const projectName =
+          projects.find((p) => p.id === projectId)?.project_title || "Project";
+        try {
+          await startProjectReview(projectId);
+          return { projectId, ok: true, projectName };
+        } catch (error) {
+          const message =
+            error instanceof Error ? error.message : "Failed to start review";
+          dequeueProcessingProject(projectId);
+          toast.error(`Failed to start review for ${projectName}: ${message}`);
+          addNotification({
+            message: `Failed to start review for ${projectName}`,
+            type: "error",
+          });
+          return { projectId, ok: false, projectName };
+        }
+      }),
+    );
 
-    if (projectIds.length === 1) {
-      toast.success(`Analysis complete for ${projectNames[0]}`);
-      addNotification({
-        message: `Analysis complete for ${projectNames[0]}`,
-        type: "success",
-      });
-    } else {
-      toast.success(`Analysis complete for ${projectIds.length} projects`);
-      addNotification({
-        message: `Analysis complete for ${projectIds.length} projects`,
-        type: "success",
-      });
+    const successCount = results.filter((res) => res.ok).length;
+    if (successCount > 0) {
+      const successMessage =
+        successCount === 1
+          ? `Started review for ${
+              results.find((res) => res.ok)?.projectName || "project"
+            }`
+          : `Started review for ${successCount} projects`;
+      toast.success(successMessage);
+      addNotification({ message: successMessage, type: "info" });
     }
   };
 

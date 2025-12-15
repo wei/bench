@@ -9,6 +9,7 @@ import {
   Play,
   Sparkles,
 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { Badge } from "@/components/ui/badge";
@@ -19,8 +20,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import { getPrizeCategories } from "@/lib/data-service";
 import {
-  formatCategoryName,
   getCodeReview,
   getDevpostUrl,
   getMetrics,
@@ -41,6 +42,23 @@ export function ProjectDetailPane({
   onOpenChange,
   onRerun,
 }: ProjectDetailPaneProps) {
+  const [prizeCategoryMap, setPrizeCategoryMap] = useState<
+    Record<string, string>
+  >({});
+
+  useEffect(() => {
+    getPrizeCategories().then((categories) => {
+      const mapped = categories.reduce<Record<string, string>>(
+        (acc, category) => {
+          acc[category.slug] = category.name;
+          return acc;
+        },
+        {},
+      );
+      setPrizeCategoryMap(mapped);
+    });
+  }, []);
+
   if (!project) return null;
 
   const devpostUrl = getDevpostUrl(project);
@@ -85,7 +103,7 @@ export function ProjectDetailPane({
                   className="bg-(--mlh-blue) hover:bg-(--mlh-blue)/90 text-white gap-2"
                 >
                   <Play className="h-4 w-4" />
-                  Re-run Agents
+                  Re-run
                 </Button>
                 <Button
                   variant="outline"
@@ -140,8 +158,8 @@ export function ProjectDetailPane({
                 <span className="text-4xl font-bold text-(--mlh-dark-grey) dark:text-white">
                   {project.code_to_description_similarity_score !== null &&
                   project.code_to_description_similarity_score !== undefined
-                    ? project.code_to_description_similarity_score.toFixed(1)
-                    : "0.0"}
+                    ? project.code_to_description_similarity_score.toFixed(0)
+                    : "0"}
                 </span>
                 <span className="text-xl text-gray-400">/ 10</span>
               </div>
@@ -225,7 +243,7 @@ export function ProjectDetailPane({
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-sm text-(--mlh-dark-grey) dark:text-white">
-                        {formatCategoryName(category)}
+                        {prizeCategoryMap[category] || category}
                       </h4>
                       <Badge
                         variant={

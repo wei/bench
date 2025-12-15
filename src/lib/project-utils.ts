@@ -122,15 +122,6 @@ export function parsePrizeResults(
   >;
 }
 
-// Format category name (replace underscores and capitalize words)
-export function formatCategoryName(category: string): string {
-  return category
-    .replaceAll("_", " ")
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
 // Get prize_tracks from standardized_opt_in_prizes or csv_row
 export function getPrizeTracks(project: Project): string[] {
   if (project.standardized_opt_in_prizes?.length > 0) {

@@ -62,24 +62,20 @@ export async function getPrizeCategories(): Promise<PrizeCategory[]> {
   }
 }
 
-export async function updateProject(
-  id: string,
-  updates: Partial<Project>,
-): Promise<Project | null> {
-  const supabase = createClient();
+export async function startProjectReview(projectId: string) {
+  const response = await fetch("/api/projects/start-review", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ project_id: projectId }),
+  });
 
-  try {
-    const { data, error } = await supabase
-      .from("projects")
-      .update(updates)
-      .eq("id", id)
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error("[DataService] Failed to update project:", error);
-    throw error;
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    const message =
+      (errorBody && (errorBody.error as string)) ||
+      "Failed to start project review";
+    throw new Error(message);
   }
+
+  return response.json();
 }

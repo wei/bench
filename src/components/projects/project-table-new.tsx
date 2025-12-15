@@ -1,7 +1,7 @@
 "use client";
 
 import type { Column, ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, Play, Star } from "lucide-react";
+import { Play, Star } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
@@ -12,12 +12,6 @@ import { GithubIcon } from "@/components/icons/github-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { Tables } from "@/database.types";
 import { useDataTable } from "@/hooks/use-data-table";
 import { getPrizeCategories } from "@/lib/data-service";
@@ -371,31 +365,26 @@ export function ProjectTableNew({
       },
       {
         id: "actions",
-        cell: ({ row }) => (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" aria-label="Actions">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => onRunAnalysis(row.original.id)}
-                disabled={
-                  row.original.status.startsWith("processing") &&
-                  !row.original.status.includes("invalid")
-                }
-              >
-                <Play className="mr-2 h-4 w-4" />
-                {row.original.status === "processed" ||
-                row.original.status.includes("invalid")
-                  ? "Re-run"
-                  : "Analyze"}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ),
-        size: 32,
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const isProcessing = status.startsWith("processing");
+          const isProcessed = status === "processed";
+          const label = isProcessed ? "Rerun" : "Run";
+
+          return (
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-2"
+              onClick={() => onRunAnalysis(row.original.id)}
+              disabled={isProcessing}
+            >
+              <Play className="h-4 w-4" />
+              {label}
+            </Button>
+          );
+        },
+        size: 120,
         enableSorting: false,
       },
     ];

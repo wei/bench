@@ -21,6 +21,7 @@ interface AppState {
   selectedEventId: string | null;
   isProcessing: boolean;
   processingProjects: string[];
+  showProcessingModal: boolean;
   theme: "light" | "dark";
   recentlyViewedProjects: string[];
   favoriteProjects: string[];
@@ -32,6 +33,7 @@ interface AppState {
   updateProject: (id: string, updates: Partial<Project>) => void;
   addProjects: (projects: Project[]) => void;
   setProcessingProjects: (ids: string[]) => void;
+  setShowProcessingModal: (open: boolean) => void;
   toggleTheme: () => void;
   addRecentlyViewedProject: (projectId: string) => void;
   toggleFavoriteProject: (projectId: string) => void;
@@ -44,6 +46,7 @@ export const useStore = create<AppState>((set) => ({
   selectedEventId: null,
   isProcessing: false,
   processingProjects: [],
+  showProcessingModal: false,
   theme:
     typeof window !== "undefined" && localStorage.getItem("theme") === "dark"
       ? "dark"
@@ -75,6 +78,7 @@ export const useStore = create<AppState>((set) => ({
       projects: [...state.projects, ...newProjects],
     })),
   setProcessingProjects: (ids) => set({ processingProjects: ids }),
+  setShowProcessingModal: (open) => set({ showProcessingModal: open }),
   toggleTheme: () =>
     set((state) => {
       const newTheme = state.theme === "light" ? "dark" : "light";

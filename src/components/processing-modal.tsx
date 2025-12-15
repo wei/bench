@@ -10,8 +10,8 @@ import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export function ProcessingModal() {
-  const { processingProjects, projects } = useStore();
-  const isOpen = processingProjects.length > 0;
+  const { processingProjects, projects, showProcessingModal } = useStore();
+  const isOpen = showProcessingModal && processingProjects.length > 0;
 
   const getProjectStatus = (projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
