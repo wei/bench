@@ -1,6 +1,6 @@
 "use client";
 
-import { ProjectTable } from "@/components/projects/project-table";
+import { ProjectTableNew } from "@/components/projects/project-table-new";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
 
@@ -34,7 +34,7 @@ export function ProjectsView({
         </div>
       </div>
 
-      <ProjectTable
+      <ProjectTableNew
         projects={filteredProjects}
         onRunAnalysis={onRunAnalysis}
         onBatchRun={onBatchRun}

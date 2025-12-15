@@ -1,6 +1,8 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, Github, XCircle } from "lucide-react";
+import { CheckCircle2, ExternalLink, XCircle } from "lucide-react";
+import { GithubIcon } from "@/components/icons/github-icon";
+import { DevpostIcon } from "@/components/icons/devpost-icon";
 import {
   Accordion,
   AccordionContent,
@@ -52,18 +54,18 @@ export function ProjectDetailSheet({
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-(--mlh-blue) hover:underline"
               >
-                <Github className="w-4 h-4" />
+                <GithubIcon className="w-4 h-4" />
                 GitHub Repository
               </a>
             )}
-            {devpostUrl && (
+            {(project.submission_url || devpostUrl) && (
               <a
-                href={devpostUrl}
+                href={project.submission_url || devpostUrl || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-(--mlh-blue) hover:underline"
               >
-                <ExternalLink className="w-4 h-4" />
+                <DevpostIcon className="w-4 h-4" />
                 Devpost
               </a>
             )}
@@ -134,11 +136,6 @@ export function ProjectDetailSheet({
                     <p className="text-sm text-muted-foreground">
                       {result.reason}
                     </p>
-                    {result.confidence && (
-                      <p className="text-xs text-muted-foreground">
-                        Confidence: {(result.confidence * 100).toFixed(0)}%
-                      </p>
-                    )}
                   </div>
                 ))}
               </div>
