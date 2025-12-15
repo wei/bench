@@ -169,10 +169,6 @@ function parseCsv(text: string) {
   return result.data;
 }
 
-function extractGithubLinks(value: string) {
-  return parseList(value).filter((url) => isGithubUrl(url));
-}
-
 function isUrl(value: string) {
   if (!value.trim()) return false;
   const prefixed = value.startsWith("http") ? value : `https://${value}`;

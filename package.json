@@ -26,6 +26,7 @@
     "papaparse": "^5.4.1",
     "react": "19.2.1",
     "react-dom": "19.2.1",
+    "repomix": "^1.10.1",
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {

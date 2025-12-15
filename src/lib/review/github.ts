@@ -1,9 +1,20 @@
 import type { Octokit } from "@octokit/rest";
 
 import { createGithubClient } from "@/lib/github/client";
-import type { GithubRepo } from "@/lib/review/types";
+import type { GithubRepoInfo } from "@/lib/review/types";
 
-export function parseGithubRepo(url: string): GithubRepo | null {
+type Commit = {
+  commit: {
+    author?: {
+      date?: string;
+    };
+    committer?: {
+      date?: string;
+    };
+  };
+};
+
+export function parseGithubRepo(url: string): GithubRepoInfo | null {
   if (!url.trim()) return null;
 
   const normalized = url.startsWith("http") ? url : `https://${url}`;
@@ -24,7 +35,7 @@ export function parseGithubRepo(url: string): GithubRepo | null {
   }
 }
 
-export async function isRepoAccessible(github: Octokit, repo: GithubRepo) {
+export async function isRepoAccessible(github: Octokit, repo: GithubRepoInfo) {
   try {
     await github.repos.get({
       owner: repo.owner,
@@ -47,7 +58,7 @@ export async function isRepoAccessible(github: Octokit, repo: GithubRepo) {
   }
 }
 
-export async function fetchCommitDates(github: Octokit, repo: GithubRepo) {
+export async function fetchCommitDates(github: Octokit, repo: GithubRepoInfo) {
   try {
     const latestResponse = await github.request(
       "GET /repos/{owner}/{repo}/commits",
@@ -58,7 +69,7 @@ export async function fetchCommitDates(github: Octokit, repo: GithubRepo) {
       },
     );
 
-    const latestCommit = (latestResponse.data as any[])?.[0];
+    const latestCommit = (latestResponse.data as Commit[])?.[0];
     const latestTimestamp =
       latestCommit?.commit?.author?.date ??
       latestCommit?.commit?.committer?.date;
@@ -84,7 +95,7 @@ export async function fetchCommitDates(github: Octokit, repo: GithubRepo) {
         },
       );
 
-      const earliestCommit = (earliestResponse.data as any[])?.[0];
+      const earliestCommit = (earliestResponse.data as Commit[])?.[0];
       earliestTimestamp =
         earliestCommit?.commit?.author?.date ??
         earliestCommit?.commit?.committer?.date ??
@@ -160,10 +171,10 @@ function shouldExclude(path: string): boolean {
 
 async function collectFiles(
   github: Octokit,
-  repo: GithubRepo,
+  repo: GithubRepoInfo,
   path: string = "",
-  files: any[] = [],
-): Promise<any[]> {
+  files: CollectedFile[] = [],
+): Promise<CollectedFile[]> {
   try {
     const response = await github.repos.getContent({
       owner: repo.owner,
@@ -178,7 +189,10 @@ async function collectFiles(
           await collectFiles(github, repo, item.path, files);
         } else if (item.type === "file") {
           if (!shouldExclude(item.path)) {
-            files.push(item);
+            files.push({
+              path: item.path,
+              size: typeof item.size === "number" ? item.size : null,
+            });
           }
         }
       }
@@ -189,29 +203,111 @@ async function collectFiles(
   return files;
 }
 
+type CollectedFile = {
+  path: string;
+  size: number | null;
+};
+
+async function fetchRepoFileText(
+  github: Octokit,
+  repo: GithubRepoInfo,
+  path: string,
+): Promise<string> {
+  const response = await github.request(
+    "GET /repos/{owner}/{repo}/contents/{path}",
+    {
+      owner: repo.owner,
+      repo: repo.repo,
+      path,
+      headers: {
+        accept: "application/vnd.github.raw",
+      },
+    },
+  );
+
+  const data: unknown = response.data;
+  if (typeof data === "string") return data;
+
+  if (
+    typeof data === "object" &&
+    data &&
+    "content" in data &&
+    "encoding" in data
+  ) {
+    const content = (data as { content?: unknown }).content;
+    const encoding = (data as { encoding?: unknown }).encoding;
+    if (typeof content === "string" && encoding === "base64") {
+      return Buffer.from(content, "base64").toString("utf-8");
+    }
+  }
+
+  if (Buffer.isBuffer(data)) return data.toString("utf-8");
+  if (data instanceof Uint8Array) return Buffer.from(data).toString("utf-8");
+
+  return "";
+}
+
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+
+  const workers = Array.from({ length: Math.max(1, limit) }, async () => {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(items[index]);
+    }
+  });
+
+  await Promise.all(workers);
+  return results;
+}
+
 export async function getRepoContent(
   github: Octokit,
-  repo: GithubRepo,
+  repo: GithubRepoInfo,
 ): Promise<string> {
   const files = await collectFiles(github, repo);
   let result = "";
 
-  for (const file of files) {
-    let content = "";
-    if (file.content && file.encoding === "base64") {
-      try {
-        content = Buffer.from(file.content, "base64").toString("utf-8");
-      } catch (e) {
-        console.error(`Failed to decode content for ${file.path}`, e);
-        continue;
-      }
-    } else if (file.download_url) {
-      // For large files, skip to avoid complexity; only include small files
-      continue;
-    }
+  console.debug(
+    `Collected ${files.length} files from repository ${repo.owner}/${repo.repo}.`,
+  );
 
-    if (content) {
-      result += `## File: ${file.path}\n\n${content}\n\n`;
+  const MAX_FILE_BYTES = 200_000;
+  const MAX_CONCURRENCY = 4;
+
+  const selectedFiles = files.filter((file) => {
+    if (!file.path) return false;
+    if (shouldExclude(file.path)) return false;
+    if (file.size != null && file.size > MAX_FILE_BYTES) return false;
+    return true;
+  });
+
+  const contents = await mapLimit(
+    selectedFiles,
+    MAX_CONCURRENCY,
+    async (file) => {
+      try {
+        const content = await fetchRepoFileText(github, repo, file.path);
+        return { path: file.path, content };
+      } catch (error) {
+        console.error(`Failed to fetch content for ${file.path}`, error);
+        return { path: file.path, content: "" };
+      }
+    },
+  );
+
+  for (const file of contents) {
+    if (file.content) {
+      result += `## File: \`${file.path}\`
+${file.content}
+
+`;
     }
   }
 
