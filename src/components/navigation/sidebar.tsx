@@ -1,18 +1,22 @@
 "use client";
 
-import { Star, Clock } from "lucide-react";
-import { useStore, type Project } from "@/lib/store";
-import { BenchLogo } from "@/components/icons/bench-logo";
+import { Clock, Star } from "lucide-react";
 import { useState } from "react";
+import { BenchLogo } from "@/components/icons/bench-logo";
+import { type Project, useStore } from "@/lib/store";
 
 interface SidebarProps {
   readonly onProjectClick: (project: Project) => void;
 }
 
 export function Sidebar({ onProjectClick }: SidebarProps) {
-  const { projects, selectedEventId, recentlyViewedProjects, favoriteProjects } = useStore();
+  const {
+    projects,
+    selectedEventId,
+    recentlyViewedProjects,
+    favoriteProjects,
+  } = useStore();
   const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
-
 
   // If no event is selected, don't show sidebar
   if (!selectedEventId) {
@@ -28,8 +32,7 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
   const recentlyViewed = recentlyViewedProjects
     .map((id) => projects.find((p) => p.id === id))
     .filter(
-      (p): p is Project =>
-        p !== undefined && p.event_id === selectedEventId,
+      (p): p is Project => p !== undefined && p.event_id === selectedEventId,
     )
     .slice(0, 10);
 
@@ -58,7 +61,9 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
                   onClick={() => onProjectClick(project)}
                   className="w-full text-left px-3 py-2 pl-5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#404040] transition-colors text-sm flex items-center gap-2"
                 >
-                  <div className="truncate flex-1">{project.project_title || "Untitled"}</div>
+                  <div className="truncate flex-1">
+                    {project.project_title || "Untitled"}
+                  </div>
                   <Star className="w-3 h-3 fill-yellow-500 text-yellow-500 shrink-0" />
                 </button>
               ))}
@@ -89,7 +94,9 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
                       onClick={() => onProjectClick(project)}
                       className="w-full text-left px-3 py-2 pl-5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#404040] transition-colors text-sm flex items-center gap-2"
                     >
-                      <div className="truncate flex-1">{project.project_title || "Untitled"}</div>
+                      <div className="truncate flex-1">
+                        {project.project_title || "Untitled"}
+                      </div>
                       {favoriteProjects.includes(project.id) && (
                         <Star className="w-3 h-3 fill-yellow-500 text-yellow-500 shrink-0" />
                       )}
@@ -101,13 +108,13 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
           )}
         </div>
 
-        {favoriteProjectsForEvent.length === 0 && recentlyViewed.length === 0 && (
-          <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
-            No projects to display
-          </div>
-        )}
+        {favoriteProjectsForEvent.length === 0 &&
+          recentlyViewed.length === 0 && (
+            <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
+              No projects to display
+            </div>
+          )}
       </div>
     </aside>
   );
 }
-

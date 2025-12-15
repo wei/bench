@@ -1,6 +1,7 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
+import { NotificationDrawer } from "@/components/navigation/notification-drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Breadcrumb,
@@ -13,7 +14,6 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Event, Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
-import { NotificationDrawer } from "@/components/navigation/notification-drawer";
 
 interface TopBarProps {
   readonly selectedEvent?: Event;

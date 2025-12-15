@@ -1,19 +1,21 @@
-import type { Table } from "@tanstack/react-table";
+import type { Column, Table } from "@tanstack/react-table";
+import type React from "react";
 
 export function getCommonPinningStyles<TData>(
-  column: { getIsPinned: () => boolean; getPinnedIndex: () => number },
+  column: Column<TData, unknown>,
   table: Table<TData>,
 ) {
   const isPinned = column.getIsPinned();
   const pinnedIndex = column.getPinnedIndex();
+  const isLeftPinned = isPinned === "left";
+  const isRightPinned = isPinned === "right";
   const isLastLeftPinnedColumn =
-    isPinned === "left" && table.getLeftLeafColumns().length - 1 === pinnedIndex;
-  const isFirstRightPinnedColumn =
-    isPinned === "right" && pinnedIndex === 0;
+    isLeftPinned && table.getLeftLeafColumns().length - 1 === pinnedIndex;
+  const isFirstRightPinnedColumn = isRightPinned && pinnedIndex === 0;
 
-  return {
-    left: isPinned === "left" ? `${pinnedIndex * 40}px` : undefined,
-    right: isPinned === "right" ? `${pinnedIndex * 40}px` : undefined,
+  const pinningStyles: React.CSSProperties = {
+    left: isLeftPinned ? `${pinnedIndex * 40}px` : undefined,
+    right: isRightPinned ? `${pinnedIndex * 40}px` : undefined,
     position: isPinned ? "sticky" : "relative",
     zIndex: isPinned ? 2 : 0,
     boxShadow: isLastLeftPinnedColumn
@@ -22,10 +24,11 @@ export function getCommonPinningStyles<TData>(
         ? "4px 0 4px -4px hsl(var(--border)) inset"
         : undefined,
   };
+
+  return pinningStyles;
 }
 
 export const dataTableConfig = {
   pageSizeOptions: [10, 20, 30, 50, 100],
   defaultPageSize: 20,
 };
-

@@ -3,14 +3,14 @@
 import {
   CheckCircle2,
   Code2,
-  Gift,
-  Play,
   Gauge,
-  Sparkles,
+  Gift,
   Layers,
+  Play,
+  Sparkles,
 } from "lucide-react";
-import { GithubIcon } from "@/components/icons/github-icon";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
+import { GithubIcon } from "@/components/icons/github-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,14 +19,14 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { Project } from "@/lib/store";
 import {
-  getDevpostUrl,
+  formatCategoryName,
   getCodeReview,
+  getDevpostUrl,
   getMetrics,
   parsePrizeResults,
-  formatCategoryName,
 } from "@/lib/project-utils";
+import type { Project } from "@/lib/store";
 
 interface ProjectDetailPaneProps {
   readonly project: Project | null;
@@ -66,7 +66,6 @@ export function ProjectDetailPane({
     if (value >= 40) return "#f8b92a";
     return "#e73427";
   };
-
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

@@ -1,20 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useStore } from "@/lib/store";
-import { getEvents, getProjects, updateProject } from "@/lib/data-service";
+import { toast } from "sonner";
+import { AppShell } from "@/components/app-shell";
+import { EventsPage } from "@/components/events/events-page";
+import { ProcessingModal } from "@/components/processing-modal";
+import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
+import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
+import { ProjectsView } from "@/components/projects/projects-view";
 import {
   simulateCodeReview,
   simulatePrizeCategoryReview,
 } from "@/lib/analysis-mock-simulator";
-import { AppShell } from "@/components/app-shell";
-import { EventsPage } from "@/components/events/events-page";
-import { ProjectsView } from "@/components/projects/projects-view";
-import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
-import { ProcessingModal } from "@/components/processing-modal";
-import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
+import { getEvents, getProjects, updateProject } from "@/lib/data-service";
 import type { Project } from "@/lib/store";
-import { toast } from "sonner";
+import { useStore } from "@/lib/store";
 
 export default function DashboardPage() {
   const {
@@ -26,7 +26,6 @@ export default function DashboardPage() {
     setSelectedEventId,
     updateProject: updateProjectInStore,
     addProjects,
-    processingProjects,
     setProcessingProjects,
     theme,
     addNotification,
@@ -72,7 +71,9 @@ export default function DashboardPage() {
     updateProjectInStore(projectId, codeReviewResults);
 
     // Step 2: Prize Category Review
-    updateProjectInStore(projectId, { status: "processing:prize_category_review" });
+    updateProjectInStore(projectId, {
+      status: "processing:prize_category_review",
+    });
     await new Promise((resolve) => setTimeout(resolve, 2000));
     const prizeResults = await simulatePrizeCategoryReview(project);
     updateProjectInStore(projectId, { ...prizeResults, status: "processed" });
@@ -95,7 +96,10 @@ export default function DashboardPage() {
     // Show toast notification for start
     if (projectIds.length === 1) {
       toast.info(`Starting analysis for ${projectNames[0]}`);
-      addNotification({ message: `Starting analysis for ${projectNames[0]}`, type: "info" });
+      addNotification({
+        message: `Starting analysis for ${projectNames[0]}`,
+        type: "info",
+      });
     } else {
       toast.info(`Starting analysis for ${projectIds.length} projects`);
       addNotification({
@@ -113,7 +117,10 @@ export default function DashboardPage() {
 
     if (projectIds.length === 1) {
       toast.success(`Analysis complete for ${projectNames[0]}`);
-      addNotification({ message: `Analysis complete for ${projectNames[0]}`, type: "success" });
+      addNotification({
+        message: `Analysis complete for ${projectNames[0]}`,
+        type: "success",
+      });
     } else {
       toast.success(`Analysis complete for ${projectIds.length} projects`);
       addNotification({
@@ -175,7 +182,6 @@ export default function DashboardPage() {
       <AppShell
         selectedEvent={selectedEvent}
         selectedProject={selectedProject}
-        onEventSelect={setSelectedEventId}
         onProjectClick={handleProjectClick}
       >
         {!selectedEventId ? (

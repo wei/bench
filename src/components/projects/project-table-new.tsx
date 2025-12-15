@@ -1,12 +1,14 @@
 "use client";
 
-import * as React from "react";
 import type { Column, ColumnDef } from "@tanstack/react-table";
-import { Play, MoreHorizontal, Star } from "lucide-react";
+import { MoreHorizontal, Play, Star } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
+import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
+import { DevpostIcon } from "@/components/icons/devpost-icon";
+import { GithubIcon } from "@/components/icons/github-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -16,21 +18,19 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import type { Tables } from "@/database.types";
 import { useDataTable } from "@/hooks/use-data-table";
-import type { Project, ProjectProcessingStatus } from "@/lib/store";
-import { useStore } from "@/lib/store";
+import { getPrizeCategories } from "@/lib/data-service";
 import {
+  getComplexityColor,
   getDevpostUrl,
   getPrizeTracks,
   getStatusColor,
-  getComplexityColor,
   getStatusDescription,
 } from "@/lib/project-utils";
-import { GithubIcon } from "@/components/icons/github-icon";
-import { DevpostIcon } from "@/components/icons/devpost-icon";
+import type { Project, ProjectProcessingStatus } from "@/lib/store";
+import { useStore } from "@/lib/store";
 import { toTitleCase } from "@/lib/utils/string-utils";
-import { getPrizeCategories } from "@/lib/data-service";
-import type { Tables } from "@/database.types";
 
 type PrizeCategory = Tables<"prize_categories">;
 
@@ -54,7 +54,10 @@ const statusOptions: Array<{
     value: "processing:prize_category_review",
   },
   { label: "Processed", value: "processed" },
-  { label: "Invalid: GitHub Inaccessible", value: "invalid:github_inaccessible" },
+  {
+    label: "Invalid: GitHub Inaccessible",
+    value: "invalid:github_inaccessible",
+  },
   { label: "Invalid: Rule Violation", value: "invalid:rule_violation" },
 ];
 
@@ -82,7 +85,9 @@ export function ProjectTableNew({
     "complexity",
     parseAsArrayOf(parseAsString).withDefault([]),
   );
-  const [prizeCategories, setPrizeCategories] = React.useState<PrizeCategory[]>([]);
+  const [prizeCategories, setPrizeCategories] = React.useState<PrizeCategory[]>(
+    [],
+  );
 
   React.useEffect(() => {
     getPrizeCategories().then(setPrizeCategories);
@@ -120,13 +125,12 @@ export function ProjectTableNew({
     [toggleFavoriteProject],
   );
 
-  const columns = React.useMemo<ColumnDef<Project>[]>(
-    () => {
-      const getPrizeDisplayName = (slug: string) => {
-        return prizeCategoryMap.get(slug) || slug;
-      };
+  const columns = React.useMemo<ColumnDef<Project>[]>(() => {
+    const getPrizeDisplayName = (slug: string) => {
+      return prizeCategoryMap.get(slug) || slug;
+    };
 
-      return [
+    return [
       {
         id: "select",
         header: ({ table }) => (
@@ -162,7 +166,9 @@ export function ProjectTableNew({
               type="button"
               onClick={() => handleToggleFavorite(row.original.id)}
               className="p-1.5 hover:bg-gray-100 rounded-md transition-all border border-transparent hover:border-gray-300 shadow-sm hover:shadow"
-              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-label={
+                isFavorite ? "Remove from favorites" : "Add to favorites"
+              }
             >
               <Star
                 className={`h-4 w-4 ${
@@ -393,15 +399,13 @@ export function ProjectTableNew({
         enableSorting: false,
       },
     ];
-    },
-    [
-      onProjectClick,
-      onRunAnalysis,
-      favoriteProjects,
-      handleToggleFavorite,
-      prizeCategoryMap,
-    ],
-  );
+  }, [
+    onProjectClick,
+    onRunAnalysis,
+    favoriteProjects,
+    handleToggleFavorite,
+    prizeCategoryMap,
+  ]);
 
   const { table } = useDataTable({
     data: filteredData,
@@ -422,7 +426,9 @@ export function ProjectTableNew({
     onBatchRun(allIds);
   };
 
-  const allProcessed = filteredData.length > 0 && filteredData.every((p) => p.status === "processed");
+  const allProcessed =
+    filteredData.length > 0 &&
+    filteredData.every((p) => p.status === "processed");
   const hasNoProjects = filteredData.length === 0;
 
   const actionBar = (
@@ -440,8 +446,8 @@ export function ProjectTableNew({
   return (
     <div className="space-y-4">
       <DataTable table={table} actionBar={actionBar}>
-        <DataTableToolbar 
-          table={table} 
+        <DataTableToolbar
+          table={table}
           onRunAll={handleRunAll}
           onRunSelected={(ids) => onBatchRun(ids)}
           onImport={onImport}
@@ -452,4 +458,3 @@ export function ProjectTableNew({
     </div>
   );
 }
-

@@ -1,10 +1,7 @@
 "use client";
 
-import * as React from "react";
-import {
-  flexRender,
-  type Table as TanstackTable,
-} from "@tanstack/react-table";
+import { flexRender, type Table as TanstackTable } from "@tanstack/react-table";
+import type * as React from "react";
 import {
   Table,
   TableBody,
@@ -73,10 +70,7 @@ export function DataTable<TData>({
                       table,
                     );
                     return (
-                      <TableCell
-                        key={cell.id}
-                        style={pinningStyles}
-                      >
+                      <TableCell key={cell.id} style={pinningStyles}>
                         {flexRender(
                           cell.column.columnDef.cell,
                           cell.getContext(),
@@ -102,4 +96,3 @@ export function DataTable<TData>({
     </div>
   );
 }
-

@@ -10,7 +10,6 @@ interface AppShellProps {
   readonly children: React.ReactNode;
   readonly selectedEvent?: Event;
   readonly selectedProject?: Project | null;
-  readonly onEventSelect: (eventId: string | null) => void;
   readonly onProjectClick: (project: Project) => void;
 }
 
@@ -18,7 +17,6 @@ export function AppShell({
   children,
   selectedEvent,
   selectedProject,
-  onEventSelect,
   onProjectClick,
 }: AppShellProps) {
   return (

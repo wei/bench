@@ -93,9 +93,7 @@ export function CSVImportDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleImport}>
-            Import
-          </Button>
+          <Button onClick={handleImport}>Import</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

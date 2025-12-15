@@ -143,7 +143,9 @@ export function getPrizeTracks(project: Project): string[] {
   ) {
     const tracks = project.csv_row.prize_tracks;
     if (Array.isArray(tracks)) {
-      return tracks.filter((track): track is string => typeof track === "string");
+      return tracks.filter(
+        (track): track is string => typeof track === "string",
+      );
     }
   }
   return [];
@@ -195,4 +197,3 @@ export function getComplexityColor(complexity: string | null): string {
       return "bg-gray-300 text-gray-700";
   }
 }
-

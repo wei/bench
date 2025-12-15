@@ -104,7 +104,10 @@ export function MonthRangePicker({ value, onChange }: MonthRangePickerProps) {
       <PopoverContent className="w-80 p-4">
         <div className="space-y-4">
           <div>
-            <label htmlFor="start-month" className="text-sm font-medium mb-2 block">
+            <label
+              htmlFor="start-month"
+              className="text-sm font-medium mb-2 block"
+            >
               Start Date
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -143,7 +146,10 @@ export function MonthRangePicker({ value, onChange }: MonthRangePickerProps) {
           </div>
 
           <div>
-            <label htmlFor="end-month" className="text-sm font-medium mb-2 block">
+            <label
+              htmlFor="end-month"
+              className="text-sm font-medium mb-2 block"
+            >
               End Date (Optional)
             </label>
             <div className="grid grid-cols-2 gap-2">
@@ -167,7 +173,9 @@ export function MonthRangePicker({ value, onChange }: MonthRangePickerProps) {
 
               <Select
                 value={endYear?.toString() ?? ""}
-                onValueChange={(v) => setEndYear(v ? Number.parseInt(v, 10) : null)}
+                onValueChange={(v) =>
+                  setEndYear(v ? Number.parseInt(v, 10) : null)
+                }
               >
                 <SelectTrigger id="end-year">
                   <SelectValue placeholder="Year" />

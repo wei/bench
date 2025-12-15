@@ -20,9 +20,9 @@ export function ProcessingModal() {
 
   const getStatusColor = (status: string, projectId: string) => {
     // Check if project is queued but hasn't started processing
-    const project = projects.find((p) => p.id === projectId);
-    const isQueued = processingProjects.includes(projectId) && status === "unprocessed";
-    
+    const isQueued =
+      processingProjects.includes(projectId) && status === "unprocessed";
+
     if (status === "processed") return "bg-green-500";
     if (status === "processing:code_review") return "bg-blue-500";
     if (status === "processing:prize_category_review") return "bg-yellow-500";
@@ -32,7 +32,6 @@ export function ProcessingModal() {
   };
 
   const circles = processingProjects.map((projectId) => {
-    const status = getProjectStatus(projectId);
     return {
       id: projectId,
       projectId,
@@ -41,15 +40,20 @@ export function ProcessingModal() {
 
   const getStatusDescription = (status: string) => {
     if (status === "processed") return "Analysis complete";
-    if (status === "processing:code_review") return "Analyzing code structure and complexity";
-    if (status === "processing:prize_category_review") return "Evaluating prize category eligibility";
+    if (status === "processing:code_review")
+      return "Analyzing code structure and complexity";
+    if (status === "processing:prize_category_review")
+      return "Evaluating prize category eligibility";
     if (status.startsWith("invalid")) return "Processing failed";
     return "Queued for processing";
   };
 
   return (
     <Dialog open={isOpen}>
-      <DialogContent className="max-w-6xl max-h-[95vh] w-[95vw]" showCloseButton={false}>
+      <DialogContent
+        className="max-w-6xl max-h-[95vh] w-[95vw]"
+        showCloseButton={false}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl">Processing Projects</DialogTitle>
         </DialogHeader>
@@ -67,7 +71,6 @@ export function ProcessingModal() {
             <div className="flex flex-wrap gap-2 justify-center p-6 bg-gray-50 rounded-lg">
               {circles.map((circle) => {
                 const status = getProjectStatus(circle.projectId);
-                const isQueued = processingProjects.includes(circle.projectId) && status === "unprocessed";
                 return (
                   <div
                     key={circle.id}
@@ -76,7 +79,10 @@ export function ProcessingModal() {
                       getStatusColor(status, circle.projectId),
                       status.startsWith("processing") && "animate-pulse",
                     )}
-                    title={projects.find((p) => p.id === circle.projectId)?.project_title || "Unknown"}
+                    title={
+                      projects.find((p) => p.id === circle.projectId)
+                        ?.project_title || "Unknown"
+                    }
                   />
                 );
               })}

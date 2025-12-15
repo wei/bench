@@ -1,22 +1,22 @@
 "use client";
 
-import * as React from "react";
 import {
-  useReactTable,
+  type ColumnDef,
+  type ColumnFiltersState,
   getCoreRowModel,
+  getFacetedMinMaxValues,
+  getFacetedRowModel,
+  getFacetedUniqueValues,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFacetedMinMaxValues,
-  type ColumnDef,
-  type ColumnFiltersState,
-  type SortingState,
-  type VisibilityState,
   type RowSelectionState,
+  type SortingState,
   type TableOptions,
+  useReactTable,
+  type VisibilityState,
 } from "@tanstack/react-table";
+import * as React from "react";
 
 interface UseDataTableOptions<TData> extends Partial<TableOptions<TData>> {
   data: TData[];
@@ -99,4 +99,3 @@ export function useDataTable<TData>({
     setGlobalFilter,
   };
 }
-

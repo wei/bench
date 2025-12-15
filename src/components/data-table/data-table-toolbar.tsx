@@ -1,10 +1,9 @@
 "use client";
 
-import * as React from "react";
-import { X, Search, Play, Upload } from "lucide-react";
 import type { Table as TanstackTable } from "@tanstack/react-table";
+import { Play, Search, Upload, X } from "lucide-react";
+import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -13,6 +12,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 
 interface DataTableToolbarProps<TData> {
   table: TanstackTable<TData>;
@@ -32,7 +32,9 @@ export function DataTableToolbar<TData>({
   hasNoProjects = false,
 }: DataTableToolbarProps<TData>) {
   const selectedRows = table.getFilteredSelectedRowModel().rows;
-  const selectedIds = selectedRows.map((row) => (row.original as { id: string }).id);
+  const selectedIds = selectedRows.map(
+    (row) => (row.original as { id: string }).id,
+  );
   const hasSelection = selectedIds.length > 0;
   const isFiltered = table.getState().columnFilters.length > 0;
   const [globalFilter, setGlobalFilter] = React.useState("");
@@ -44,17 +46,21 @@ export function DataTableToolbar<TData>({
     return () => clearTimeout(timeoutId);
   }, [globalFilter, table]);
 
-  const runButtonVariant = hasSelection ? "default" : hasNoProjects || allProcessed ? "outline" : "default";
+  const runButtonVariant = hasSelection
+    ? "default"
+    : hasNoProjects || allProcessed
+      ? "outline"
+      : "default";
   const runButtonClassName = hasSelection
     ? "gap-2 bg-(--mlh-blue) hover:bg-(--mlh-blue)/90 text-white"
-    : hasNoProjects || allProcessed 
-      ? "gap-2" 
+    : hasNoProjects || allProcessed
+      ? "gap-2"
       : "gap-2 bg-(--mlh-blue) hover:bg-(--mlh-blue)/90 text-white";
   const importVariant = hasNoProjects ? "default" : "outline";
   const importClassName = hasNoProjects
     ? "gap-2 bg-(--mlh-blue) hover:bg-(--mlh-blue)/90 text-white"
     : "gap-2";
-  
+
   const handleRunClick = () => {
     if (hasSelection && onRunSelected) {
       onRunSelected(selectedIds);
@@ -91,13 +97,15 @@ export function DataTableToolbar<TData>({
       </div>
       <div className="flex items-center gap-2">
         {(onRunAll || onRunSelected) && (
-          <Button 
-            onClick={handleRunClick} 
+          <Button
+            onClick={handleRunClick}
             variant={runButtonVariant as "default" | "outline"}
             className={runButtonClassName}
           >
             <Play className="h-4 w-4" />
-            {hasSelection ? `Run ${selectedIds.length} Selected` : "Run All Projects"}
+            {hasSelection
+              ? `Run ${selectedIds.length} Selected`
+              : "Run All Projects"}
           </Button>
         )}
         {onImport && (
@@ -146,4 +154,3 @@ export function DataTableToolbar<TData>({
     </div>
   );
 }
-

@@ -1,13 +1,12 @@
 "use client";
 
-import * as React from "react";
+import type { Table as TanstackTable } from "@tanstack/react-table";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
   ChevronsLeftIcon,
   ChevronsRightIcon,
 } from "lucide-react";
-import type { Table as TanstackTable } from "@tanstack/react-table";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -28,10 +27,13 @@ export function DataTablePagination<TData>({
 }: DataTablePaginationProps<TData>) {
   return (
     <div className="flex items-center justify-between px-2">
-      <div className="flex-1 text-sm text-muted-foreground" role="status" aria-live="polite">
+      <output
+        className="flex-1 text-sm text-muted-foreground"
+        aria-live="polite"
+      >
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected.
-      </div>
+      </output>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
           <p className="text-sm font-medium">Rows per page</p>
@@ -99,4 +101,3 @@ export function DataTablePagination<TData>({
     </div>
   );
 }
-

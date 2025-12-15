@@ -12,6 +12,7 @@ export function GithubIcon({ className }: GithubIconProps) {
       xmlns="http://www.w3.org/2000/svg"
       className={cn("w-4 h-4", className)}
     >
+      <title>GitHub icon</title>
       <path
         fillRule="evenodd"
         clipRule="evenodd"
@@ -22,4 +23,3 @@ export function GithubIcon({ className }: GithubIconProps) {
     </svg>
   );
 }
-

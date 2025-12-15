@@ -1,15 +1,15 @@
 import type { ColumnDef } from "@tanstack/react-table";
 import type { Project } from "@/lib/store";
 import {
-  SelectHeader,
-  SelectCell,
-  StatusCell,
-  ProjectTitleCell,
-  LinksCell,
-  ComplexityCell,
-  PrizeTracksCell,
-  TechStackCell,
   ActionsCell,
+  ComplexityCell,
+  LinksCell,
+  PrizeTracksCell,
+  ProjectTitleCell,
+  SelectCell,
+  SelectHeader,
+  StatusCell,
+  TechStackCell,
 } from "./project-table-cells";
 
 export function createColumns(
@@ -68,4 +68,3 @@ export function createColumns(
     },
   ];
 }
-

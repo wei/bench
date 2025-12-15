@@ -1,14 +1,14 @@
-import { ExternalLink, Github, Play } from "lucide-react";
 import type { Table as ReactTable, Row } from "@tanstack/react-table";
+import { ExternalLink, Github, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { Project, ProjectProcessingStatus } from "@/lib/store";
 import {
+  getComplexityColor,
   getDevpostUrl,
   getPrizeTracks,
   getStatusColor,
-  getComplexityColor,
 } from "@/lib/project-utils";
+import type { Project, ProjectProcessingStatus } from "@/lib/store";
 
 export function SelectHeader({
   table,
@@ -25,11 +25,7 @@ export function SelectHeader({
   );
 }
 
-export function SelectCell({
-  row,
-}: {
-  readonly row: Row<Project>;
-}) {
+export function SelectCell({ row }: { readonly row: Row<Project> }) {
   return (
     <input
       type="checkbox"
@@ -134,11 +130,7 @@ export function PrizeTracksCell({ project }: { readonly project: Project }) {
   );
 }
 
-export function TechStackCell({
-  techStack,
-}: {
-  readonly techStack: string[];
-}) {
+export function TechStackCell({ techStack }: { readonly techStack: string[] }) {
   return (
     <div className="flex flex-wrap gap-1 max-w-[250px]">
       {techStack.length > 0 ? (
@@ -181,4 +173,3 @@ export function ActionsCell({
     </Button>
   );
 }
-

@@ -1,5 +1,4 @@
 import { parseAsArrayOf, parseAsString } from "nuqs";
-import type { Column, Table } from "@tanstack/react-table";
 
 export type FilterOperator =
   | "eq"
@@ -37,20 +36,14 @@ export interface ExtendedColumnSort {
 }
 
 export function createColumnFiltersParser() {
-  return parseAsArrayOf(
-    parseAsString.withDefault(""),
-  ).withDefault([]);
+  return parseAsArrayOf(parseAsString.withDefault("")).withDefault([]);
 }
 
 export function createColumnSortsParser() {
-  return parseAsArrayOf(
-    parseAsString.withDefault(""),
-  ).withDefault([]);
+  return parseAsArrayOf(parseAsString.withDefault("")).withDefault([]);
 }
 
-export function serializeFilters(
-  filters: ExtendedColumnFilter[],
-): string[] {
+export function serializeFilters(filters: ExtendedColumnFilter[]): string[] {
   return filters.map(
     (filter) =>
       `${filter.id}:${filter.operator}:${JSON.stringify(filter.value)}`,
@@ -90,4 +83,3 @@ export function deserializeSorts(serialized: string[]): ExtendedColumnSort[] {
     })
     .filter((s): s is ExtendedColumnSort => s !== null);
 }
-

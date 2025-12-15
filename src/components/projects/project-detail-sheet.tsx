@@ -1,8 +1,8 @@
 "use client";
 
-import { CheckCircle2, ExternalLink, XCircle } from "lucide-react";
-import { GithubIcon } from "@/components/icons/github-icon";
+import { CheckCircle2, XCircle } from "lucide-react";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
+import { GithubIcon } from "@/components/icons/github-icon";
 import {
   Accordion,
   AccordionContent,
@@ -17,8 +17,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { Project } from "@/lib/store";
 import { getDevpostUrl, parsePrizeResults } from "@/lib/project-utils";
+import type { Project } from "@/lib/store";
 
 interface ProjectDetailSheetProps {
   readonly project: Project | null;

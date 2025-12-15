@@ -87,10 +87,7 @@ export function ProjectTable({
             Run All Projects
           </Button>
           {selectedIds.length > 0 && (
-            <Button
-              onClick={() => onBatchRun(selectedIds)}
-              className="gap-2"
-            >
+            <Button onClick={() => onBatchRun(selectedIds)} className="gap-2">
               <Play className="w-4 h-4" />
               Run {selectedIds.length} Selected
             </Button>

@@ -1,8 +1,8 @@
 "use client";
 
+import { Calendar, ImageOff, MapPin, Search } from "lucide-react";
 import Image from "next/image";
 import { useState } from "react";
-import { Calendar, ImageOff, MapPin, Search } from "lucide-react";
 import { MonthRangePicker } from "@/components/month-range-picker";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -94,9 +94,7 @@ export function EventsPage({ onEventSelect }: EventsPageProps) {
       if (!a.starts_at && !b.starts_at) return 0;
       if (!a.starts_at) return 1;
       if (!b.starts_at) return -1;
-      return (
-        new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime()
-      );
+      return new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime();
     });
 
   const getProjectCount = (eventId: string) => {
@@ -204,7 +202,10 @@ export function EventsPage({ onEventSelect }: EventsPageProps) {
                         badgeClassName = "bg-blue-500 shrink-0";
                       }
                       return (
-                        <Badge variant={badgeVariant} className={badgeClassName}>
+                        <Badge
+                          variant={badgeVariant}
+                          className={badgeClassName}
+                        >
                           {eventStatus.label}
                         </Badge>
                       );
