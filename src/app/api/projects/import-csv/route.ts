@@ -138,10 +138,10 @@ function mapRecordToProject(
   project.project_created_at = parseDate(record["Project Created At"]);
 
   const tryItOutRaw = record['"Try it out" Links'] ?? "";
-  const tryItOutGithubLinks = extractGithubLinks(tryItOutRaw);
-  project.try_it_out_links = tryItOutGithubLinks;
+  const tryItOutAllLinks = parseList(tryItOutRaw).filter((url) => isUrl(url));
+  project.try_it_out_links = tryItOutAllLinks;
 
-  project.github_url = tryItOutGithubLinks[0] || null;
+  project.github_url = tryItOutAllLinks.find((url) => isGithubUrl(url)) || null;
 
   const additionalTeamMembers = parseNumber(
     record["Additional Team Member Count"] ?? "",
@@ -171,6 +171,17 @@ function parseCsv(text: string) {
 
 function extractGithubLinks(value: string) {
   return parseList(value).filter((url) => isGithubUrl(url));
+}
+
+function isUrl(value: string) {
+  if (!value.trim()) return false;
+  const prefixed = value.startsWith("http") ? value : `https://${value}`;
+  try {
+    const url = new URL(prefixed);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function parseNumber(value: string) {
