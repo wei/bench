@@ -167,15 +167,30 @@ export function getStatusColor(status: ProjectProcessingStatus): string {
   }
 }
 
+// Get short status description (titlecased)
+export function getStatusDescription(status: ProjectProcessingStatus): string {
+  if (status.startsWith("invalid:")) {
+    return "Invalid";
+  }
+  if (status.startsWith("processing:")) {
+    const part = status.split(":")[1];
+    return part
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
+  }
+  return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
 // Get complexity color
 export function getComplexityColor(complexity: string | null): string {
   switch (complexity) {
     case "beginner":
-      return "bg-(--mlh-yellow) text-(--mlh-dark-grey)";
+      return "bg-yellow-500 text-white";
     case "intermediate":
-      return "bg-(--mlh-blue) text-white";
+      return "bg-blue-500 text-white";
     case "advanced":
-      return "bg-(--mlh-purple) text-white";
+      return "bg-red-500 text-white";
     default:
       return "bg-gray-300 text-gray-700";
   }

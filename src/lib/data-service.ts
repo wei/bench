@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/client";
 // Type aliases for cleaner code
 type Event = Tables<"events">;
 type Project = Tables<"projects">;
+type PrizeCategory = Tables<"prize_categories">;
 
 export async function getEvents(): Promise<Event[]> {
   const supabase = createClient();
@@ -41,6 +42,23 @@ export async function getProjects(eventId?: string): Promise<Project[]> {
   } catch (error) {
     console.error("[DataService] Failed to fetch projects:", error);
     throw error;
+  }
+}
+
+export async function getPrizeCategories(): Promise<PrizeCategory[]> {
+  const supabase = createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("prize_categories")
+      .select("*")
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error("[DataService] Failed to fetch prize categories:", error);
+    return [];
   }
 }
 
