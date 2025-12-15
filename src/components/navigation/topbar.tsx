@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Moon, Sun } from "lucide-react";
+import { Moon, Sun } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Breadcrumb,
@@ -13,6 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import type { Event, Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
+import { NotificationDrawer } from "@/components/navigation/notification-drawer";
 
 interface TopBarProps {
   readonly selectedEvent?: Event;
@@ -62,9 +63,7 @@ export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
       </Breadcrumb>
 
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" className="rounded-full">
-          <Bell className="w-5 h-5" />
-        </Button>
+        <NotificationDrawer />
 
         <Button
           variant="ghost"
