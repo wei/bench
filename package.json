@@ -13,6 +13,7 @@
     "check": "pnpm lint && pnpm format && pnpm type-check",
     "gen-types": "supabase gen types typescript --project-id rthourrxcgxxrzrvnewg --schema public > src/database.types.ts"
   },
+  "packageManager": "pnpm@10.26.0",
   "dependencies": {
     "@radix-ui/react-accordion": "^1.2.12",
     "@ai-sdk/google": "^2.0.46",
