@@ -41,7 +41,55 @@ export async function POST(request: Request) {
       );
     }
 
+    // Validate headers
+    const requiredHeaders = [
+      "Project Title",
+      "Project Status",
+      "Submission Url",
+      "About The Project",
+      "Video Demo Link",
+      "Opt-In Prizes",
+      "Built With",
+      "Submitter First Name",
+      "Submitter Last Name",
+      "Submitter Email",
+      "Notes",
+      "Project Created At",
+      '"Try it out" Links',
+      "Additional Team Member Count",
+    ];
+
+    // Check headers from the first record (since PapaParse with header: true uses keys)
+    const firstRecord = records[0];
+    const presentHeaders = Object.keys(firstRecord);
+    const missingHeaders = requiredHeaders.filter(
+      (h) => !presentHeaders.includes(h),
+    );
+
+    if (missingHeaders.length > 0) {
+      return NextResponse.json(
+        {
+          error: `Missing required headers: ${missingHeaders.join(", ")}. Got headers: ${presentHeaders.join(", ")}`,
+        },
+        { status: 400 },
+      );
+    }
+
     const supabase = await createClient();
+
+    // Delete existing projects for this event
+    const { error: deleteError } = await supabase
+      .from("projects")
+      .delete()
+      .eq("event_id", eventId.trim());
+
+    if (deleteError) {
+      console.error("Failed to delete existing projects", deleteError);
+      return NextResponse.json(
+        { error: "Failed to clear existing projects" },
+        { status: 500 },
+      );
+    }
 
     const { data: prizeCategories, error: prizeError } = await supabase
       .from("prize_categories")

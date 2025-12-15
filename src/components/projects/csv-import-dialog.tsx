@@ -10,8 +10,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import type { Tables } from "@/database.types";
 
 type Project = Tables<"projects">;
@@ -19,8 +19,9 @@ type Project = Tables<"projects">;
 interface CSVImportDialogProps {
   readonly open: boolean;
   readonly onOpenChange: (open: boolean) => void;
-  readonly onImport: (data: Partial<Project>[]) => void;
+  readonly onImport: (insertedCount: number) => void;
   readonly eventId: string;
+  readonly hasExistingProjects: boolean;
 }
 
 export function CSVImportDialog({
@@ -28,42 +29,46 @@ export function CSVImportDialog({
   onOpenChange,
   onImport,
   eventId,
+  hasExistingProjects,
 }: CSVImportDialogProps) {
-  const [csvText, setCSVText] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleImport = () => {
-    if (!csvText.trim()) return;
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files?.[0]) {
+      setFile(e.target.files[0]);
+    }
+  };
 
-    const lines = csvText.trim().split("\n");
-    const headers = lines[0].split(",").map((h) => h.trim());
+  const handleImport = async () => {
+    if (!file) return;
 
-    const projects = lines.slice(1).map((line, index) => {
-      const values = line.split(",").map((v) => v.trim());
-      const rowData: Record<string, string> = {};
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("event_id", eventId);
 
-      headers.forEach((header, i) => {
-        rowData[header] = values[i] || "";
+    try {
+      const response = await fetch("/api/projects/import-csv", {
+        method: "POST",
+        body: formData,
       });
 
-      return {
-        event_id: eventId,
-        project_title:
-          rowData.project_title ||
-          rowData.title ||
-          rowData.name ||
-          `Untitled Project ${index + 1}`,
-        github_url: rowData.github_url || rowData.github || null,
-        status: "unprocessed" as const,
-        tech_stack: [],
-        technical_complexity: null,
-        prize_results: {},
-        csv_row: rowData,
-      } satisfies Partial<Project>;
-    });
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to upload CSV");
+      }
 
-    onImport(projects);
-    setCSVText("");
-    onOpenChange(false);
+      const data = await response.json();
+      onImport(data.inserted || 0);
+      setFile(null);
+      onOpenChange(false);
+    } catch (error) {
+      console.error("Upload error:", error);
+      alert(error instanceof Error ? error.message : "Failed to upload CSV");
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   return (
@@ -72,28 +77,41 @@ export function CSVImportDialog({
         <DialogHeader>
           <DialogTitle>Import Projects from CSV</DialogTitle>
           <DialogDescription>
-            Paste your CSV data below. Include columns like: project_title,
-            github_url, devpost_url
+            Upload Project data exported from Devpost. (Include PII, Do not
+            check Sort by Opt-In Prizes)
+            <br />
+            Required headers include: Project Title, Project Status, Submission
+            Url, etc.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="csv-data">CSV Data</Label>
-            <Textarea
-              id="csv-data"
-              placeholder="project_title,github_url,devpost_url&#10;My Project,https://github.com/...,https://devpost.com/..."
-              value={csvText}
-              onChange={(e) => setCSVText(e.target.value)}
-              rows={10}
-              className="font-mono text-sm"
+          {hasExistingProjects && (
+            <div className="bg-destructive/15 text-destructive p-3 rounded-md text-sm font-medium border border-destructive/20">
+              Warning: This will delete all existing projects for this event.
+            </div>
+          )}
+          <div className="grid w-full max-w-sm items-center gap-1.5">
+            <Label htmlFor="csv-file">CSV File</Label>
+            <Input
+              id="csv-file"
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              disabled={isUploading}
             />
           </div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={isUploading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleImport}>Import</Button>
+          <Button onClick={handleImport} disabled={!file || isUploading}>
+            {isUploading ? "Importing..." : "Import"}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

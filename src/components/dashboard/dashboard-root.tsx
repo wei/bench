@@ -234,23 +234,10 @@ export function DashboardRoot({ children }: DashboardRootProps) {
     setIsImportDialogOpen(true);
   };
 
-  const handleImport = (newProjects: Partial<Project>[]) => {
-    // Convert partial projects to full projects with required fields
-    const fullProjects = newProjects.map((p) => ({
-      ...p,
-      event_id: p.event_id || activeEventId || "",
-      status: p.status || "unprocessed",
-      tech_stack: p.tech_stack || [],
-      csv_row: p.csv_row || {},
-      prize_results: p.prize_results || {},
-      standardized_opt_in_prizes: p.standardized_opt_in_prizes || [],
-      built_with: p.built_with || "",
-      opt_in_prizes: p.opt_in_prizes || "",
-      judging_shortlist: p.judging_shortlist || false,
-    })) as Project[];
-
-    addProjects(fullProjects);
-    toast.success(`Imported ${fullProjects.length} project(s)`);
+  const handleImport = (insertedCount: number) => {
+    toast.success(`Imported ${insertedCount} project(s)`);
+    // Assuming Realtime subscription updates the store, or we might want to force a re-fetch.
+    // For now, let's assume Realtime handles it as per useRealtimeSubscription.
   };
 
   const selectedEvent = events.find((e) => e.id === activeEventId);
@@ -309,6 +296,9 @@ export function DashboardRoot({ children }: DashboardRootProps) {
           onOpenChange={setIsImportDialogOpen}
           onImport={handleImport}
           eventId={activeEventId}
+          hasExistingProjects={projects.some(
+            (p) => p.event_id === activeEventId,
+          )}
         />
       )}
 
