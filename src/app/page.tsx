@@ -29,6 +29,7 @@ export default function DashboardPage() {
     processingProjects,
     setProcessingProjects,
     theme,
+    addNotification,
   } = useStore();
 
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -94,8 +95,13 @@ export default function DashboardPage() {
     // Show toast notification for start
     if (projectIds.length === 1) {
       toast.info(`Starting analysis for ${projectNames[0]}`);
+      addNotification({ message: `Starting analysis for ${projectNames[0]}`, type: "info" });
     } else {
       toast.info(`Starting analysis for ${projectIds.length} projects`);
+      addNotification({
+        message: `Starting analysis for ${projectIds.length} projects`,
+        type: "info",
+      });
     }
 
     // Process sequentially
@@ -107,9 +113,21 @@ export default function DashboardPage() {
 
     if (projectIds.length === 1) {
       toast.success(`Analysis complete for ${projectNames[0]}`);
+      addNotification({ message: `Analysis complete for ${projectNames[0]}`, type: "success" });
     } else {
       toast.success(`Analysis complete for ${projectIds.length} projects`);
+      addNotification({
+        message: `Analysis complete for ${projectIds.length} projects`,
+        type: "success",
+      });
     }
+  };
+
+  const handleProjectClick = (project: Project) => {
+    setSelectedProject(project);
+    // Track recently viewed
+    const { addRecentlyViewedProject } = useStore.getState();
+    addRecentlyViewedProject(project.id);
   };
 
   const handleImportClick = () => {
@@ -158,6 +176,7 @@ export default function DashboardPage() {
         selectedEvent={selectedEvent}
         selectedProject={selectedProject}
         onEventSelect={setSelectedEventId}
+        onProjectClick={handleProjectClick}
       >
         {!selectedEventId ? (
           <EventsPage onEventSelect={setSelectedEventId} />
@@ -166,7 +185,7 @@ export default function DashboardPage() {
             onRunAnalysis={handleRunAnalysis}
             onBatchRun={handleBatchRun}
             onImport={handleImportClick}
-            onProjectClick={setSelectedProject}
+            onProjectClick={handleProjectClick}
           />
         )}
       </AppShell>

@@ -11,6 +11,7 @@ interface AppShellProps {
   readonly selectedEvent?: Event;
   readonly selectedProject?: Project | null;
   readonly onEventSelect: (eventId: string | null) => void;
+  readonly onProjectClick: (project: Project) => void;
 }
 
 export function AppShell({
@@ -18,10 +19,11 @@ export function AppShell({
   selectedEvent,
   selectedProject,
   onEventSelect,
+  onProjectClick,
 }: AppShellProps) {
   return (
     <div className="flex h-screen bg-gray-50">
-      <Sidebar onEventSelect={onEventSelect} />
+      <Sidebar onProjectClick={onProjectClick} />
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <TopBar

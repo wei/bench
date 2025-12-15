@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Open_Sans, Space_Mono } from "next/font/google";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 import "./globals.css";
 import { NotificationProvider } from "@/components/notification-provider";
 
@@ -31,8 +32,10 @@ export default function RootLayout({
       <body
         className={`${openSans.variable} ${spaceMono.variable} font-sans antialiased h-full`}
       >
-        {children}
-        <NotificationProvider />
+        <NuqsAdapter>
+          {children}
+          <NotificationProvider />
+        </NuqsAdapter>
       </body>
     </html>
   );
