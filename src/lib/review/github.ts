@@ -121,3 +121,99 @@ function getGithubStatus(error: unknown) {
   }
   return null;
 }
+
+function shouldExclude(path: string): boolean {
+  const excludePatterns = [
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+    "__pycache__",
+    ".cache",
+    ".DS_Store",
+    ".env",
+    "*.log",
+    "*.tmp",
+    "*.swp",
+    "*.bak",
+    "*.exe",
+    "*.dll",
+    "*.so",
+    "*.dylib",
+    "*.jar",
+    "*.war",
+    "*.zip",
+    "*.tar.gz",
+    "*.tgz",
+    "*.deb",
+    "*.rpm",
+  ];
+
+  for (const pattern of excludePatterns) {
+    if (pattern.startsWith("*.")) {
+      if (path.toLowerCase().endsWith(pattern.slice(2).toLowerCase()))
+        return true;
+    } else if (path.toLowerCase().includes(pattern.toLowerCase())) return true;
+  }
+  return false;
+}
+
+async function collectFiles(
+  github: Octokit,
+  repo: GithubRepo,
+  path: string = "",
+  files: any[] = [],
+): Promise<any[]> {
+  try {
+    const response = await github.repos.getContent({
+      owner: repo.owner,
+      repo: repo.repo,
+      path,
+    });
+    const contents = response.data;
+
+    if (Array.isArray(contents)) {
+      for (const item of contents) {
+        if (item.type === "dir") {
+          await collectFiles(github, repo, item.path, files);
+        } else if (item.type === "file") {
+          if (!shouldExclude(item.path)) {
+            files.push(item);
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error(`Failed to collect files at path ${path}`, error);
+  }
+  return files;
+}
+
+export async function getRepoContent(
+  github: Octokit,
+  repo: GithubRepo,
+): Promise<string> {
+  const files = await collectFiles(github, repo);
+  let result = "";
+
+  for (const file of files) {
+    let content = "";
+    if (file.content && file.encoding === "base64") {
+      try {
+        content = Buffer.from(file.content, "base64").toString("utf-8");
+      } catch (e) {
+        console.error(`Failed to decode content for ${file.path}`, e);
+        continue;
+      }
+    } else if (file.download_url) {
+      // For large files, skip to avoid complexity; only include small files
+      continue;
+    }
+
+    if (content) {
+      result += `## File: ${file.path}\n\n${content}\n\n`;
+    }
+  }
+
+  return result;
+}

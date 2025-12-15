@@ -80,5 +80,6 @@ export async function startProjectReview(project: ProjectWithEvent) {
   console.debug(
     `Project ID ${project.id}'s commit dates are within the hacking period.`,
   );
+
   await setProjectStatus(supabase, project.id, "processed", null);
 }
