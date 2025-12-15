@@ -177,7 +177,7 @@ export function EventsPage({ onEventSelect }: EventsPageProps) {
           return (
             <Card
               key={event.id}
-              className="cursor-pointer hover:shadow-lg transition-all hover:border-[#e42d42] overflow-hidden"
+              className="cursor-pointer hover:shadow-lg transition-all hover:border-primary focus-visible:outline-none focus-visible:ring-0 outline-none overflow-hidden"
               onClick={() => onEventSelect(event.id)}
             >
               <div className="flex gap-4 p-6">

@@ -142,9 +142,9 @@ function SidebarEventItem({
       type="button"
       onClick={() => onEventSelect(event.id)}
       className={cn(
-        "w-full text-left px-3 py-3 rounded-lg transition-colors",
+        "w-full text-left px-3 py-3 rounded-lg transition-colors cursor-pointer",
         "hover:bg-gray-50 dark:hover:bg-[#404040]",
-        isSelected && "bg-(--mlh-red) text-white hover:bg-[#c92a1f]",
+        isSelected && "bg-(--mlh-blue) text-white hover:bg-(--mlh-blue)/90",
       )}
     >
       <div className="flex gap-3">
