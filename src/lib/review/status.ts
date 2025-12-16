@@ -34,8 +34,8 @@ export async function markProcessing(
       status: "processing:code_review",
       process_started_at: startedAt,
       project_processing_status_message: null,
-      code_to_description_similarity_score: null,
-      code_to_description_similarity_description: null,
+      description_accuracy_level: null,
+      description_accuracy_message: null,
       technical_complexity: null,
       technical_complexity_message: null,
       tech_stack: [],
@@ -88,8 +88,8 @@ export async function resetAgentAugmentedFields(
   const { error } = await supabase
     .from("projects")
     .update({
-      code_to_description_similarity_score: null,
-      code_to_description_similarity_description: null,
+      description_accuracy_level: null,
+      description_accuracy_message: null,
       technical_complexity: null,
       technical_complexity_message: null,
       tech_stack: [],

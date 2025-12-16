@@ -8,8 +8,8 @@ import type { ReviewAgent } from "@/lib/review/types";
 import { codeReviewSystemPrompt } from "@/prompts/code-review";
 
 const codeReviewSchema = z.object({
-  code_to_description_similarity_score: z.number().min(1).max(10),
-  code_to_description_similarity_description: z.string(),
+  description_accuracy_level: z.enum(["low", "medium", "high"]),
+  description_accuracy_message: z.string(),
   technical_complexity: z.enum([
     "invalid",
     "beginner",
@@ -19,11 +19,6 @@ const codeReviewSchema = z.object({
   technical_complexity_message: z.string(),
   tech_stack: z.array(z.string()),
 });
-
-function clampScore(score: number) {
-  if (Number.isNaN(score)) return 1;
-  return Math.min(10, Math.max(1, score));
-}
 
 function buildUserPrompt({
   description,
@@ -79,11 +74,8 @@ export const codeReviewAgent: ReviewAgent<
     const { error } = await context.supabase
       .from("projects")
       .update({
-        code_to_description_similarity_score: clampScore(
-          data.code_to_description_similarity_score,
-        ),
-        code_to_description_similarity_description:
-          data.code_to_description_similarity_description,
+        description_accuracy_level: data.description_accuracy_level,
+        description_accuracy_message: data.description_accuracy_message,
         technical_complexity: data.technical_complexity,
         technical_complexity_message: data.technical_complexity_message,
         tech_stack: data.tech_stack,

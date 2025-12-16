@@ -102,10 +102,12 @@ export type Database = {
         Row: {
           about_the_project: string | null
           built_with: string
-          code_to_description_similarity_description: string | null
-          code_to_description_similarity_score: number | null
           created_at: string
           csv_row: Json
+          description_accuracy_level:
+            | Database["public"]["Enums"]["description_accuracy_level"]
+            | null
+          description_accuracy_message: string | null
           event_id: string
           github_url: string | null
           id: string
@@ -138,10 +140,12 @@ export type Database = {
         Insert: {
           about_the_project?: string | null
           built_with?: string
-          code_to_description_similarity_description?: string | null
-          code_to_description_similarity_score?: number | null
           created_at?: string
           csv_row?: Json
+          description_accuracy_level?:
+            | Database["public"]["Enums"]["description_accuracy_level"]
+            | null
+          description_accuracy_message?: string | null
           event_id: string
           github_url?: string | null
           id?: string
@@ -174,10 +178,12 @@ export type Database = {
         Update: {
           about_the_project?: string | null
           built_with?: string
-          code_to_description_similarity_description?: string | null
-          code_to_description_similarity_score?: number | null
           created_at?: string
           csv_row?: Json
+          description_accuracy_level?:
+            | Database["public"]["Enums"]["description_accuracy_level"]
+            | null
+          description_accuracy_message?: string | null
           event_id?: string
           github_url?: string | null
           id?: string
@@ -226,6 +232,7 @@ export type Database = {
     }
     Enums: {
       complexity_rating: "invalid" | "beginner" | "intermediate" | "advanced"
+      description_accuracy_level: "low" | "medium" | "high"
       project_processing_status:
         | "unprocessed"
         | "processing:code_review"
@@ -363,6 +370,7 @@ export const Constants = {
   public: {
     Enums: {
       complexity_rating: ["invalid", "beginner", "intermediate", "advanced"],
+      description_accuracy_level: ["low", "medium", "high"],
       project_processing_status: [
         "unprocessed",
         "processing:code_review",

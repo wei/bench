@@ -28,8 +28,8 @@ export async function startProjectReview(project: ProjectWithEvent) {
   const context: ReviewContext = { supabase, github, project };
 
   // Keep in-memory context in sync after reset.
-  context.project.code_to_description_similarity_score = null;
-  context.project.code_to_description_similarity_description = null;
+  context.project.description_accuracy_level = null;
+  context.project.description_accuracy_message = null;
   context.project.technical_complexity = null;
   context.project.technical_complexity_message = null;
   context.project.tech_stack = [];

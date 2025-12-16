@@ -41,6 +41,12 @@ create type complexity_rating as enum (
   'intermediate',
   'advanced'
 );
+
+create type description_accuracy_level as enum (
+  'low',
+  'medium',
+  'high'
+);
 ```
 
 ## Tables
@@ -124,8 +130,8 @@ create table projects (
   project_processing_status_message text,
   process_started_at timestamptz,
 
-  code_to_description_similarity_score numeric, -- did they implement all the features mentioned in the description (define a objective system prompt with a rubric)
-  code_to_description_similarity_description text,
+  description_accuracy_level description_accuracy_level, -- how well the code matches the description (low, medium, high)
+  description_accuracy_message text, -- explanation for the accuracy level
   technical_complexity complexity_rating,
   technical_complexity_message text,
 

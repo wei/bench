@@ -207,19 +207,15 @@ export function ProjectDetailPane({
 
             <div className="rounded-lg border bg-white dark:bg-[#262626] p-4">
               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
-                Similarity Score
+                Description Accuracy
               </h3>
               <div className="flex items-baseline gap-1">
                 <span className="text-4xl font-bold text-(--mlh-dark-grey) dark:text-white">
-                  {project.code_to_description_similarity_score !== null &&
-                  project.code_to_description_similarity_score !== undefined
-                    ? project.code_to_description_similarity_score.toFixed(0)
-                    : "0"}
+                  {project.description_accuracy_level || "N/A"}
                 </span>
-                <span className="text-xl text-gray-400">/ 10</span>
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Code to description similarity
+                {project.description_accuracy_message || "Not yet evaluated"}
               </p>
             </div>
           </div>

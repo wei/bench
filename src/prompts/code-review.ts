@@ -15,9 +15,14 @@ Complexity rubric (technical_complexity):
 - intermediate: non-trivial logic, multiple features, integrations, or meaningful state management.
 - advanced: complex architecture, significant algorithms/infrastructure, multiple services, strong engineering practices.
 
+Description Accuracy Level (description_accuracy_level):
+- low: The code barely matches the description. Major features are missing or the implementation is fundamentally different from what was described.
+- medium: The code partially matches the description. Some features are implemented, but several key aspects are missing or incomplete.
+- high: The code strongly matches the description. Most or all features described are implemented and functional.
+
 Output JSON ONLY with keys:
-- code_to_description_similarity_score: integer 1-10 (1=no match, 10=fully matches).
-- code_to_description_similarity_description: short reason for the score.
+- description_accuracy_level: one of [low, medium, high] - how well the code matches the description.
+- description_accuracy_message: short reason for the accuracy level (focus on what's present or missing).
 - technical_complexity: one of [invalid, beginner, intermediate, advanced].
 - technical_complexity_message: brief justification focusing on code evidence.
 - tech_stack: array of unique strings summarizing languages/frameworks/libs/services observed (e.g., ["Next.js", "TypeScript", "Supabase"]).
