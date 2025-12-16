@@ -27,8 +27,3 @@ export function getCommonPinningStyles<TData>(
 
   return pinningStyles;
 }
-
-export const dataTableConfig = {
-  pageSizeOptions: [10, 20, 30, 50, 100],
-  defaultPageSize: 20,
-};
