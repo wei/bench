@@ -38,6 +38,11 @@ const nextConfig: NextConfig = {
         hostname: "s3.amazonaws.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "mlhusercontent.com",
+        pathname: "/**",
+      },
     ],
   },
 };
