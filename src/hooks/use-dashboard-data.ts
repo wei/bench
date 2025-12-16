@@ -17,6 +17,11 @@ export function useDashboardData(activeEventId: string | null) {
   } = useQuery({
     queryKey: ["events"],
     queryFn: () => getEvents(),
+    enabled: true, // Always fetch projects, filter by event if needed
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   // 2. Fetch Prize Categories
@@ -27,6 +32,11 @@ export function useDashboardData(activeEventId: string | null) {
   } = useQuery({
     queryKey: ["prize_categories"],
     queryFn: () => getPrizeCategories(),
+    enabled: true, // Always fetch projects, filter by event if needed
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   // 3. Fetch Projects (dependent on activeEventId or fetch all?)

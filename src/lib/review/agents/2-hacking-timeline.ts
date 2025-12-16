@@ -43,7 +43,7 @@ export const hackingTimelineAgent: ReviewAgent<CommitDates> = async (
     const lastCommit = new Date(commitDates.lastCommitAt);
 
     if (firstCommit < new Date(startsAt) || lastCommit > new Date(endsAt)) {
-      const message = `Commits fall outside event window. First: ${commitDates.firstCommitAt}, Last: ${commitDates.lastCommitAt}, Window: ${startsAt} - ${endsAt}.`;
+      const message = `Commits fall outside event window.`;
       await setProjectStatus(
         context.supabase,
         context.project.id,
