@@ -20,7 +20,7 @@ export function ProjectsView({
   onProjectClick,
   eventId,
 }: ProjectsViewProps) {
-  const { projects, selectedEventId } = useStore();
+  const { projects, selectedEventId, events } = useStore();
 
   const activeEventId = eventId ?? selectedEventId ?? null;
 
@@ -28,13 +28,21 @@ export function ProjectsView({
     ? projects.filter((p) => p.event_id === activeEventId)
     : projects;
 
+  const activeEvent = activeEventId
+    ? events.find((e) => e.id === activeEventId)
+    : null;
+
   const { showProcessingModal } = useStore();
+
+  const projectsTitle = activeEvent
+    ? `${activeEvent.name} Projects`
+    : "Projects";
 
   return (
     <div className="space-y-6 relative">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
+          <h2 className="text-2xl font-bold text-gray-900">{projectsTitle}</h2>
           <p className="text-gray-600 mt-1">
             {filteredProjects.length} submissions
           </p>
