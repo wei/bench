@@ -278,7 +278,7 @@ export async function getRepoContent(
     `Collected ${files.length} files from repository ${repo.owner}/${repo.repo}.`,
   );
 
-  const MAX_FILE_BYTES = 200_000;
+  const MAX_FILE_BYTES = 50_000;
   const MAX_CONCURRENCY = 4;
 
   const selectedFiles = files.filter((file) => {

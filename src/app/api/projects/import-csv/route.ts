@@ -31,7 +31,11 @@ export async function POST(request: Request) {
       );
     }
 
-    const csvText = await file.text();
+    let csvText = await file.text();
+
+    // Determine if we need to fix the headers (projects export has a weird issue with missing headers for team members)
+    csvText = fixCsvHeaders(csvText);
+
     const records = parseCsv(csvText);
 
     if (!records.length) {
@@ -69,7 +73,9 @@ export async function POST(request: Request) {
     if (missingHeaders.length > 0) {
       return NextResponse.json(
         {
-          error: `Missing required headers: ${missingHeaders.join(", ")}. Got headers: ${presentHeaders.join(", ")}`,
+          error: `Missing required headers: ${missingHeaders.join(
+            ", ",
+          )}. Got headers: ${presentHeaders.join(", ")}`,
         },
         { status: 400 },
       );
@@ -276,4 +282,43 @@ function matchPrizeCategories(
   });
 
   return Array.from(matched);
+}
+
+function fixCsvHeaders(text: string) {
+  const lines = text.split("\n");
+  if (lines.length === 0) return text;
+
+  const headerLine = lines[0];
+  const marker = "Team Member 1 Email";
+  const markerIndex = headerLine.indexOf(marker);
+
+  if (markerIndex === -1) {
+    return text;
+  }
+
+  const TEAM_MEMBER_HEADERS = [
+    "Team Member 2 First Name",
+    "Team Member 2 Last Name",
+    "Team Member 2 Email",
+    "Team Member 3 First Name",
+    "Team Member 3 Last Name",
+    "Team Member 3 Email",
+    "Team Member 4 First Name",
+    "Team Member 4 Last Name",
+    "Team Member 4 Email",
+    "Team Member 5 First Name",
+    "Team Member 5 Last Name",
+    "Team Member 5 Email",
+    "Team Member 6 First Name",
+    "Team Member 6 Last Name",
+    "Team Member 6 Email",
+  ].join(",");
+
+  const newHeaderLine =
+    headerLine.slice(0, markerIndex + marker.length) +
+    "," +
+    TEAM_MEMBER_HEADERS;
+
+  lines[0] = newHeaderLine;
+  return lines.join("\n");
 }
