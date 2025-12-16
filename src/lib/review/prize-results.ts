@@ -6,6 +6,43 @@ export type PrizeReviewResult = {
   message: string;
 };
 
+export async function persistPrizeResultsBatch(
+  context: ReviewContext,
+  updates: Record<string, PrizeReviewResult>,
+) {
+  const existing = (context.project.prize_results ?? {}) as Record<
+    string,
+    PrizeReviewResult
+  >;
+
+  const updatedPrizeResults = {
+    ...existing,
+    ...updates,
+  };
+
+  const { error } = await context.supabase
+    .from("projects")
+    .update({ prize_results: updatedPrizeResults })
+    .eq("id", context.project.id);
+
+  if (error) {
+    console.error("Failed to persist prize review results batch", {
+      updates,
+      error,
+    });
+    await setProjectStatus(
+      context.supabase,
+      context.project.id,
+      "errored",
+      `Failed to persist prize results batch`,
+    );
+    return false;
+  }
+
+  context.project.prize_results = updatedPrizeResults;
+  return true;
+}
+
 export function createPendingPrizeResults(prizeSlugs: string[]) {
   return prizeSlugs.reduce<Record<string, PrizeReviewResult>>(
     (acc, prizeSlug) => {
@@ -18,49 +55,20 @@ export function createPendingPrizeResults(prizeSlugs: string[]) {
 
 export async function markPrizeProcessing(
   context: ReviewContext,
-  prizeSlug: string,
+  prizeSlugs: string[],
 ) {
-  return persistPrizeResult(context, prizeSlug, {
-    status: "processing",
-    message: `Reviewing prize: ${prizeSlug}`,
-  });
-}
+  if (prizeSlugs.length === 0) return true;
 
-export async function persistPrizeResult(
-  context: ReviewContext,
-  prizeSlug: string,
-  result: PrizeReviewResult,
-) {
-  const existing = (context.project.prize_results ?? {}) as Record<
-    string,
-    PrizeReviewResult
-  >;
+  const updates = prizeSlugs.reduce<Record<string, PrizeReviewResult>>(
+    (acc, prizeSlug) => {
+      acc[prizeSlug] = {
+        status: "processing",
+        message: `Reviewing prize: ${prizeSlug}`,
+      };
+      return acc;
+    },
+    {},
+  );
 
-  const updatedPrizeResults = {
-    ...existing,
-    [prizeSlug]: result,
-  };
-
-  const { error } = await context.supabase
-    .from("projects")
-    .update({ prize_results: updatedPrizeResults })
-    .eq("id", context.project.id);
-
-  if (error) {
-    console.error("Failed to persist prize review result", {
-      prizeSlug,
-      error,
-    });
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "errored",
-      `Failed to persist prize result for ${prizeSlug}`,
-    );
-    return false;
-  }
-
-  // Keep context in sync for downstream agents or further prize reviews.
-  context.project.prize_results = updatedPrizeResults;
-  return true;
+  return persistPrizeResultsBatch(context, updates);
 }
