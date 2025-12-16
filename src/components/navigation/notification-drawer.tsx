@@ -44,16 +44,21 @@ export function NotificationDrawer() {
           <Bell className="w-5 h-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-md">
-        <SheetHeader>
-          <SheetTitle className="flex items-center gap-2">
-            <Bell className="w-4 h-4" />
-            Notifications
-          </SheetTitle>
-        </SheetHeader>
-        <div className="mt-6 space-y-3">
+      <SheetContent
+        side="right"
+        className="w-full sm:max-w-md p-0 flex flex-col"
+      >
+        <div className="p-6 border-b border-gray-200 dark:border-[#404040]">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Bell className="w-4 h-4" />
+              Notifications
+            </SheetTitle>
+          </SheetHeader>
+        </div>
+        <div className="flex-1 overflow-y-auto p-6 space-y-3">
           {items.length === 0 && (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground text-center py-8">
               No notifications yet
             </div>
           )}
@@ -62,7 +67,7 @@ export function NotificationDrawer() {
             return (
               <div
                 key={note.id}
-                className="border rounded-lg p-3 bg-white dark:bg-[#1f1f1f] space-y-2"
+                className="border border-gray-200 dark:border-[#404040] rounded-lg p-4 bg-white dark:bg-[#1f1f1f] space-y-2 shadow-sm"
               >
                 <div className="flex items-center justify-between">
                   <Badge className={`text-xs ${meta.className}`}>

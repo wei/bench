@@ -1,17 +1,51 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { X } from "lucide-react";
+import { useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { useStore } from "@/lib/store";
 import { cn } from "@/lib/utils";
 
 export function ProcessingModal() {
-  const { processingProjects, projects, showProcessingModal } = useStore();
+  const {
+    processingProjects,
+    projects,
+    showProcessingModal,
+    setShowProcessingModal,
+  } = useStore();
   const isOpen = showProcessingModal && processingProjects.length > 0;
+
+  // Auto-close modal when all projects are done processing
+  useEffect(() => {
+    if (!showProcessingModal || processingProjects.length === 0) return;
+
+    // Check if all projects are done (not actively processing)
+    const allDone = processingProjects.every((projectId) => {
+      const project = projects.find((p) => p.id === projectId);
+      const status = project?.status || "unprocessed";
+      // Done if status is processed, invalid, or errored (not actively processing)
+      return (
+        status === "processed" ||
+        status.startsWith("invalid") ||
+        status === "errored"
+      );
+    });
+
+    if (allDone) {
+      // Small delay to show final state before closing
+      const timer = setTimeout(() => {
+        setShowProcessingModal(false);
+      }, 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    processingProjects,
+    projects,
+    showProcessingModal,
+    setShowProcessingModal,
+  ]);
+
+  if (!isOpen) return null;
 
   const getProjectStatus = (projectId: string) => {
     const project = projects.find((p) => p.id === projectId);
@@ -26,7 +60,8 @@ export function ProcessingModal() {
     if (status === "processed") return "bg-green-500";
     if (status === "processing:code_review") return "bg-blue-500";
     if (status === "processing:prize_category_review") return "bg-yellow-500";
-    if (status.startsWith("invalid")) return "bg-red-500";
+    if (status.startsWith("invalid")) return "bg-orange-500";
+    if (status === "errored") return "bg-red-500";
     if (isQueued) return "bg-gray-400";
     return "bg-gray-400";
   };
@@ -48,16 +83,27 @@ export function ProcessingModal() {
     return "Queued for processing";
   };
 
-  return (
-    <Dialog open={isOpen}>
-      <DialogContent
-        className="max-w-6xl max-h-[95vh] w-[95vw]"
-        showCloseButton={false}
-      >
-        <DialogHeader>
-          <DialogTitle className="text-xl">Processing Projects</DialogTitle>
-        </DialogHeader>
+  const handleClose = () => {
+    setShowProcessingModal(false);
+  };
 
+  return (
+    <div className="relative w-full max-w-6xl max-h-[95vh] bg-white dark:bg-[#262626] rounded-lg border border-gray-200 dark:border-[#404040] shadow-xl p-6 overflow-y-auto">
+      <div className="flex items-start justify-between mb-4">
+        <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+          Processing Projects
+        </h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleClose}
+          className="h-8 w-8 shrink-0"
+          aria-label="Close modal"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      <div className="space-y-6">
         <div className="space-y-6 py-4">
           <div className="text-center">
             <p className="text-sm text-gray-600">
@@ -107,8 +153,12 @@ export function ProcessingModal() {
                 <span className="text-gray-600">Completed</span>
               </div>
               <div className="flex items-center gap-2 whitespace-nowrap">
-                <div className="w-3 h-3 rounded-full bg-red-500 shrink-0" />
+                <div className="w-3 h-3 rounded-full bg-orange-500 shrink-0" />
                 <span className="text-gray-600">Invalid</span>
+              </div>
+              <div className="flex items-center gap-2 whitespace-nowrap">
+                <div className="w-3 h-3 rounded-full bg-red-500 shrink-0" />
+                <span className="text-gray-600">Error</span>
               </div>
             </div>
           </div>
@@ -145,7 +195,7 @@ export function ProcessingModal() {
             })}
           </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </div>
+    </div>
   );
 }

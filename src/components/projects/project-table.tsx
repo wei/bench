@@ -1,7 +1,7 @@
 "use client";
 
 import type { Column, ColumnDef } from "@tanstack/react-table";
-import { Play, Star } from "lucide-react";
+import { Info, Play, Star } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
@@ -199,24 +199,27 @@ export function ProjectTable({
         header: ({ column }: { column: Column<Project, unknown> }) => (
           <DataTableColumnHeader column={column} label="Status" />
         ),
-        cell: ({ cell }) => {
+        cell: ({ cell, row }) => {
           const status = cell.getValue<ProjectProcessingStatus>();
+          const hasErrorOrInvalid =
+            status === "errored" || status.startsWith("invalid");
           return (
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Badge
                     variant="outline"
-                    className={`cursor-help border-0 ${getStatusBadgeColor(
+                    className={`cursor-help border-0 flex items-center gap-1 ${getStatusBadgeColor(
                       status,
                     )}`}
                   >
+                    {hasErrorOrInvalid && <Info className="w-3 h-3 shrink-0" />}
                     {getStatusLabel(status)}
                   </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
                   <p className="font-semibold">{getStatusLabel(status)}</p>
-                  <p>{getStatusTooltipMessage(cell.row.original)}</p>
+                  <p>{getStatusTooltipMessage(row.original)}</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -489,6 +492,7 @@ export function ProjectTable({
   });
 
   const handleRunAll = () => {
+    // Include ALL projects, even invalid or errored ones
     const allIds = filteredData.map((p) => p.id);
     onBatchRun(allIds);
   };

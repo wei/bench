@@ -1,12 +1,13 @@
 "use client";
 
 import {
-  CheckCircle2,
   Code2,
   Gauge,
   Gift,
+  Info,
   Layers,
   Play,
+  Ruler,
   Sparkles,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -20,11 +21,21 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { getPrizeCategories } from "@/lib/data-service";
 import {
   getCodeReview,
   getMetrics,
   getPrizeTracks,
+  getStatusBadgeColor,
+  getStatusCircleColor,
+  getStatusLabel,
+  getStatusTooltipMessage,
   parsePrizeResults,
 } from "@/lib/project-utils";
 import type { Project } from "@/lib/store";
@@ -121,8 +132,47 @@ export function ProjectDetailPane({
         </div>
 
         <div className="p-6 space-y-6 bg-gray-50 dark:bg-[#171717]">
-          {/* Top info row: links, similarity, processed */}
+          {/* Top info row: status, links, similarity */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-start">
+            <div className="rounded-lg border bg-white dark:bg-[#262626] p-4 relative">
+              <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase mb-2">
+                Status
+              </h3>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="cursor-help space-y-1">
+                      <div className="flex items-center gap-2">
+                        {(project.status === "errored" ||
+                          project.status.startsWith("invalid")) && (
+                          <Info className="w-4 h-4 text-gray-600 dark:text-gray-400 shrink-0" />
+                        )}
+                        <span className="text-lg font-semibold text-gray-900 dark:text-white">
+                          {getStatusLabel(project.status)}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {getStatusTooltipMessage(project) ||
+                          "No additional details"}
+                      </p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-semibold">
+                      {getStatusLabel(project.status)}
+                    </p>
+                    <p>{getStatusTooltipMessage(project)}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {/* Tiny colored circle in top right corner */}
+              <div
+                className={`absolute top-3 right-3 w-2 h-2 rounded-full ${getStatusCircleColor(
+                  project.status,
+                )} ${project.status.startsWith("processing") ? "animate-pulse" : ""}`}
+              />
+            </div>
+
             <div className="rounded-lg border bg-white dark:bg-[#262626] p-4 space-y-2">
               <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
                 Links
@@ -170,22 +220,6 @@ export function ProjectDetailPane({
                 Code to description similarity
               </p>
             </div>
-
-            <div className="rounded-lg border bg-white dark:bg-[#262626] p-4 flex items-center justify-between gap-2">
-              <div className="space-y-1">
-                <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase">
-                  Status
-                </h3>
-              </div>
-              {project.status === "processed" ? (
-                <Badge className="bg-(--mlh-teal) text-white">
-                  <CheckCircle2 className="w-3 h-3 mr-1" />
-                  Processed
-                </Badge>
-              ) : (
-                <Badge variant="secondary">Pending</Badge>
-              )}
-            </div>
           </div>
 
           {codeReview && (
@@ -232,12 +266,22 @@ export function ProjectDetailPane({
           {/* Prize Tracks (eligibility results) */}
           {(() => {
             const prizeTracks = getPrizeTracks(project);
-            const showPrizeTracks =
-              prizeTracks.length > 0 ||
-              (prizeResults && Object.keys(prizeResults).length > 0);
+            // Show prize tracks if they exist OR if there are results (even if tracks array is empty)
+            const hasPrizeTracks = prizeTracks.length > 0;
+            const hasPrizeResults =
+              prizeResults && Object.keys(prizeResults).length > 0;
+            const showPrizeTracks = hasPrizeTracks || hasPrizeResults;
             const isProcessing = project.status.startsWith("processing");
 
             if (!showPrizeTracks) return null;
+
+            // If we have results but no tracks, show results from prizeResults keys
+            const tracksToShow =
+              prizeTracks.length > 0
+                ? prizeTracks
+                : prizeResults
+                  ? Object.keys(prizeResults)
+                  : [];
 
             return (
               <div className="space-y-3">
@@ -248,7 +292,7 @@ export function ProjectDetailPane({
                   </h3>
                 </div>
                 <div className="space-y-3">
-                  {prizeTracks.map((trackSlug) => {
+                  {tracksToShow.map((trackSlug) => {
                     const result = prizeResults
                       ? prizeResults[trackSlug]
                       : null;
@@ -318,9 +362,9 @@ export function ProjectDetailPane({
 
           <div className="grid grid-cols-1 gap-6">
             {/* Metrics */}
-            <div className="bg-white dark:bg-[#262626] rounded-lg p-6">
+            <div className="bg-white dark:bg-[#262626] rounded-lg">
               <div className="flex items-center gap-2 mb-4">
-                <Gift className="w-4 h-4 text-(--mlh-yellow)" />
+                <Ruler className="w-4 h-4 text-(--mlh-yellow)" />
                 <h3 className="font-semibold text-(--mlh-dark-grey) dark:text-white">
                   Metrics
                 </h3>

@@ -56,28 +56,35 @@ export function DataTable<TData>({ table, children }: DataTableProps<TData>) {
             </TableHeader>
             <TableBody>
               {table.getRowModel().rows?.length ? (
-                table.getRowModel().rows.map((row) => (
-                  <TableRow
-                    key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
-                    aria-selected={row.getIsSelected()}
-                  >
-                    {row.getVisibleCells().map((cell) => {
-                      const pinningStyles = getCommonPinningStyles(
-                        cell.column,
-                        table,
-                      );
-                      return (
-                        <TableCell key={cell.id} style={pinningStyles}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext(),
-                          )}
-                        </TableCell>
-                      );
-                    })}
-                  </TableRow>
-                ))
+                table.getRowModel().rows.map((row) => {
+                  const project = row.original as { status?: string };
+                  const hasError =
+                    project.status === "errored" ||
+                    project.status?.startsWith("invalid");
+                  return (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      aria-selected={row.getIsSelected()}
+                      className={hasError ? "bg-red-50 dark:bg-red-950/20" : ""}
+                    >
+                      {row.getVisibleCells().map((cell) => {
+                        const pinningStyles = getCommonPinningStyles(
+                          cell.column,
+                          table,
+                        );
+                        return (
+                          <TableCell key={cell.id} style={pinningStyles}>
+                            {flexRender(
+                              cell.column.columnDef.cell,
+                              cell.getContext(),
+                            )}
+                          </TableCell>
+                        );
+                      })}
+                    </TableRow>
+                  );
+                })
               ) : (
                 <TableRow>
                   <TableCell

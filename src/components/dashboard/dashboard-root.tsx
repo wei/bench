@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -238,8 +239,16 @@ export function DashboardRoot({ children }: DashboardRootProps) {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#e42d42] mx-auto mb-4" />
+        <div className="text-center flex flex-col items-center">
+          <div className="mx-auto mb-4">
+            <Image
+              src="/logo.svg"
+              width={48}
+              height={48}
+              alt="Bench Logo"
+              className="w-12 h-12 animate-spin mr-2"
+            />
+          </div>
           <p className="text-muted-foreground">Loading Bench...</p>
         </div>
       </div>
@@ -293,8 +302,6 @@ export function DashboardRoot({ children }: DashboardRootProps) {
           )}
         />
       )}
-
-      <ProcessingModal />
     </DashboardContext.Provider>
   );
 }

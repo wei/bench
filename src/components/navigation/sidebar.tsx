@@ -30,11 +30,36 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
 
   // Get recently viewed projects for the selected event
   const recentlyViewed = recentlyViewedProjects
-    .map((id) => projects.find((p) => p.id === id))
+    .map((item) => {
+      const project = projects.find((p) => p.id === item.id);
+      return project ? { project, timestamp: item.timestamp } : null;
+    })
     .filter(
-      (p): p is Project => p !== undefined && p.event_id === selectedEventId,
+      (item): item is { project: Project; timestamp: string } =>
+        item !== null && item.project.event_id === selectedEventId,
     )
     .slice(0, 10);
+
+  // Format time since last viewed
+  const formatTimeAgo = (timestamp: string): string => {
+    const now = new Date();
+    const viewed = new Date(timestamp);
+    const diffMs = now.getTime() - viewed.getTime();
+    const diffSec = Math.floor(diffMs / 1000);
+    const diffMin = Math.floor(diffSec / 60);
+    const diffHour = Math.floor(diffMin / 60);
+    const diffDay = Math.floor(diffHour / 24);
+
+    if (diffSec < 60) {
+      return `${diffSec}s`;
+    } else if (diffMin < 60) {
+      return `${diffMin}m`;
+    } else if (diffHour < 24) {
+      return `${diffHour}hr`;
+    } else {
+      return `${diffDay}d`;
+    }
+  };
 
   return (
     <aside className="w-64 bg-white dark:bg-[#262626] border-r border-gray-200 dark:border-[#404040] flex flex-col">
@@ -47,12 +72,12 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-6">
         {/* Favorite Projects */}
-        {favoriteProjectsForEvent.length > 0 && (
-          <div>
-            <h2 className="px-3 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
-              <Star className="w-3 h-3" />
-              Favorite Projects
-            </h2>
+        <div>
+          <h2 className="px-3 mb-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-2">
+            <Star className="w-3 h-3" />
+            Favorite Projects
+          </h2>
+          {favoriteProjectsForEvent.length > 0 ? (
             <div className="space-y-1">
               {favoriteProjectsForEvent.map((project) => (
                 <button
@@ -68,8 +93,12 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
                 </button>
               ))}
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="px-3 py-2 text-xs text-gray-500 dark:text-gray-400">
+              Star a project to add it here
+            </div>
+          )}
+        </div>
 
         <div className="mt-auto space-y-2">
           {recentlyViewed.length > 0 && (
@@ -87,19 +116,24 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
               </button>
               {showRecentlyViewed && (
                 <div className="space-y-1">
-                  {recentlyViewed.map((project) => (
+                  {recentlyViewed.map((item) => (
                     <button
-                      key={project.id}
+                      key={item.project.id}
                       type="button"
-                      onClick={() => onProjectClick(project)}
+                      onClick={() => onProjectClick(item.project)}
                       className="w-full text-left px-3 py-2 pl-5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#404040] transition-colors text-sm flex items-center gap-2"
                     >
                       <div className="truncate flex-1">
-                        {project.project_title || "Untitled"}
+                        {item.project.project_title || "Untitled"}
                       </div>
-                      {favoriteProjects.includes(project.id) && (
-                        <Star className="w-3 h-3 fill-yellow-500 text-yellow-500 shrink-0" />
-                      )}
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-xs text-gray-400 dark:text-gray-500">
+                          {formatTimeAgo(item.timestamp)}
+                        </span>
+                        {favoriteProjects.includes(item.project.id) && (
+                          <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                        )}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -107,13 +141,6 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
             </div>
           )}
         </div>
-
-        {favoriteProjectsForEvent.length === 0 &&
-          recentlyViewed.length === 0 && (
-            <div className="text-center text-sm text-gray-500 dark:text-gray-400 py-8">
-              No projects to display
-            </div>
-          )}
       </div>
     </aside>
   );

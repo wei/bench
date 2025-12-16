@@ -1,6 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { BenchLogo } from "@/components/icons/bench-logo";
 import { NotificationDrawer } from "@/components/navigation/notification-drawer";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -18,20 +20,40 @@ interface TopBarProps {
   readonly selectedProject?: Project | null;
 }
 export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
+  const pathname = usePathname();
+  const isEventsPage = pathname === "/events";
+
   return (
     <header className="h-16 bg-white dark:bg-[#262626] border-b border-gray-200 dark:border-[#404040] flex items-center justify-between px-6">
       <Breadcrumb>
         <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link
-                href="/events"
-                className="cursor-pointer hover:text-(--mlh-red)"
-              >
-                Events
-              </Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
+          {isEventsPage && (
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link
+                  href="/events"
+                  className="flex items-center gap-3 mr-2 hover:opacity-80 transition-opacity"
+                >
+                  <BenchLogo className="w-8 h-4 text-(--mlh-dark-grey) dark:text-(--mlh-white)" />
+                  <h1 className="text-2xl font-bold text-(--mlh-dark-grey) dark:text-(--mlh-white) font-headline">
+                    Bench
+                  </h1>
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          )}
+          {!isEventsPage && (
+            <BreadcrumbItem>
+              <BreadcrumbLink asChild>
+                <Link
+                  href="/events"
+                  className="cursor-pointer hover:text-(--mlh-red)"
+                >
+                  Events
+                </Link>
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          )}
 
           {selectedEvent && (
             <>

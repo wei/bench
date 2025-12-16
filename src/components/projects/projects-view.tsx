@@ -2,6 +2,7 @@
 
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect } from "react";
+import { ProcessingModal } from "@/components/processing-modal";
 import { ProjectTable } from "@/components/projects/project-table";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
@@ -87,6 +88,13 @@ export function ProjectsView({
             if (!processingProjects.includes(projectId)) {
               setProcessingProjects([...processingProjects, projectId]);
             }
+          } else {
+            // Remove from processingProjects when done (processed, invalid, errored, or unprocessed)
+            if (processingProjects.includes(projectId)) {
+              setProcessingProjects(
+                processingProjects.filter((id) => id !== projectId),
+              );
+            }
           }
         },
       )
@@ -98,8 +106,10 @@ export function ProjectsView({
     };
   }, [addProjects, setProjects, updateProject, setProcessingProjects]);
 
+  const { showProcessingModal } = useStore();
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Projects</h2>
@@ -109,13 +119,36 @@ export function ProjectsView({
         </div>
       </div>
 
-      <ProjectTable
-        projects={filteredProjects}
-        onRunAnalysis={onRunAnalysis}
-        onBatchRun={onBatchRun}
-        onImport={onImport}
-        onProjectClick={onProjectClick}
-      />
+      <div className="relative">
+        {/* Overlay background when processing */}
+        {showProcessingModal && (
+          <div className="absolute inset-0 bg-blue-50/20 dark:bg-blue-950/50 backdrop-blur-xs z-40 rounded-md" />
+        )}
+
+        <div
+          className={
+            showProcessingModal
+              ? "opacity-50 pointer-events-none transition-opacity"
+              : ""
+          }
+        >
+          <ProjectTable
+            projects={filteredProjects}
+            onRunAnalysis={onRunAnalysis}
+            onBatchRun={onBatchRun}
+            onImport={onImport}
+            onProjectClick={onProjectClick}
+          />
+        </div>
+
+        {showProcessingModal && (
+          <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
+            <div className="pointer-events-auto w-full max-w-6xl mx-16">
+              <ProcessingModal />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

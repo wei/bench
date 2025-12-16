@@ -25,7 +25,7 @@ interface AppState {
   processingProjects: string[];
   showProcessingModal: boolean;
 
-  recentlyViewedProjects: string[];
+  recentlyViewedProjects: Array<{ id: string; timestamp: string }>;
   favoriteProjects: string[];
   notifications: NotificationEntry[];
 
@@ -54,7 +54,21 @@ export const useStore = create<AppState>((set) => ({
 
   recentlyViewedProjects:
     typeof window !== "undefined"
-      ? JSON.parse(localStorage.getItem("recentlyViewedProjects") || "[]")
+      ? (() => {
+          const stored = localStorage.getItem("recentlyViewedProjects");
+          if (!stored) return [];
+          const parsed = JSON.parse(stored);
+          // Migrate old format (array of strings) to new format (array of objects)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            if (typeof parsed[0] === "string") {
+              return parsed.map((id: string) => ({
+                id,
+                timestamp: new Date().toISOString(),
+              }));
+            }
+          }
+          return parsed;
+        })()
       : [],
   favoriteProjects:
     typeof window !== "undefined"
@@ -84,10 +98,16 @@ export const useStore = create<AppState>((set) => ({
 
   addRecentlyViewedProject: (projectId) =>
     set((state) => {
+      const now = new Date().toISOString();
       const updated = [
-        projectId,
-        ...state.recentlyViewedProjects.filter((id) => id !== projectId),
-      ].slice(0, 10); // Keep only last 10
+        { id: projectId, timestamp: now },
+        ...state.recentlyViewedProjects.filter((item) => item.id !== projectId),
+      ]
+        .sort(
+          (a, b) =>
+            new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        )
+        .slice(0, 10); // Keep only last 10
       if (typeof window !== "undefined") {
         localStorage.setItem("recentlyViewedProjects", JSON.stringify(updated));
       }
