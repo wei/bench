@@ -81,6 +81,8 @@ export async function syncMlhEventsToDb(args?: {
   daysFromNow?: number;
   /** When true, only process events that have a logo_url or background_url. Default: false. */
   imagesOnly?: boolean;
+  /** When true, include events with 'canceled' or 'draft' status. Default: false. */
+  includeCanceledAndDraft?: boolean;
 }): Promise<SyncResult> {
   const daysFromNowRaw = args?.daysFromNow;
   const daysFromNow =
@@ -103,13 +105,26 @@ export async function syncMlhEventsToDb(args?: {
   });
 
   const imagesOnly = args?.imagesOnly ?? false;
-  const mlhEvents = imagesOnly
-    ? mlhEventsRaw.filter((event) => {
-        const logo = event.logo_url;
-        const hasLogo = typeof logo === "string" && logo.length > 0;
-        return hasLogo;
-      })
-    : mlhEventsRaw;
+  const includeCanceledAndDraft = args?.includeCanceledAndDraft ?? false;
+
+  let mlhEvents = mlhEventsRaw;
+
+  // Filter by images if requested
+  if (imagesOnly) {
+    mlhEvents = mlhEvents.filter((event) => {
+      const logo = event.logo_url;
+      const hasLogo = typeof logo === "string" && logo.length > 0;
+      return hasLogo;
+    });
+  }
+
+  // Filter out cancelled and draft events if requested
+  if (!includeCanceledAndDraft) {
+    mlhEvents = mlhEvents.filter((event) => {
+      const status = event.status;
+      return status !== "canceled" && status !== "draft";
+    });
+  }
 
   const rowsById = new Map<string, EventInsert>();
   for (const event of mlhEvents) {
