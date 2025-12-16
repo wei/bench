@@ -1,6 +1,7 @@
 "use client";
 
 import { Clock, Star } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { BenchLogo } from "@/components/icons/bench-logo";
 import { type Project, useStore } from "@/lib/store";
@@ -64,10 +65,15 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
   return (
     <aside className="w-64 bg-white dark:bg-[#262626] border-r border-gray-200 dark:border-[#404040] flex flex-col">
       <div className="h-16 px-6 border-b border-gray-200 dark:border-[#404040] flex items-center gap-3">
-        <BenchLogo className="w-8 h-4 text-(--mlh-dark-grey) dark:text-(--mlh-white)" />
-        <h1 className="text-2xl font-bold text-(--mlh-dark-grey) dark:text-(--mlh-white) font-headline">
-          Bench
-        </h1>
+        <Link
+          href="/events"
+          className="flex items-center gap-3 mr-2 hover:opacity-80 transition-opacity"
+        >
+          <BenchLogo className="w-8 h-4 text-(--mlh-dark-grey) dark:text-(--mlh-white)" />
+          <h1 className="text-2xl font-bold text-(--mlh-dark-grey) dark:text-(--mlh-white) font-headline">
+            Bench
+          </h1>
+        </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 flex flex-col space-y-6">
