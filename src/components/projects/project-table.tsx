@@ -345,7 +345,7 @@ export function ProjectTable({
         cell: ({ cell }) => {
           const techStack = cell.getValue<string[]>();
           return (
-            <div className="flex flex-wrap gap-1 max-w-[180px]">
+            <div className="flex flex-wrap gap-1 max-w-45">
               {techStack && techStack.length > 0 ? (
                 <TooltipProvider>
                   {techStack.slice(0, 3).map((tech) => (
