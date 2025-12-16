@@ -146,6 +146,7 @@ export function getStatusCircleColor(status: ProjectProcessingStatus): string {
     case "errored":
       return "bg-red-500";
     case "unprocessed":
+      return "bg-gray-400";
     default:
       return "bg-gray-400";
   }

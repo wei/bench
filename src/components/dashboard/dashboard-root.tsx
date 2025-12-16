@@ -5,7 +5,6 @@ import { useParams, useRouter } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
-import { ProcessingModal } from "@/components/processing-modal";
 import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
 import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
 import { useDashboardData } from "@/hooks/use-dashboard-data";

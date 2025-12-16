@@ -32,7 +32,6 @@ import {
   getCodeReview,
   getMetrics,
   getPrizeTracks,
-  getStatusBadgeColor,
   getStatusCircleColor,
   getStatusLabel,
   getStatusTooltipMessage,
