@@ -209,41 +209,17 @@ export function ProjectTable({
         ),
         cell: ({ row }) => {
           const project = row.original;
-          const submissionUrl = project.submission_url;
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="max-w-[200px]">
               <button
                 type="button"
                 onClick={() => onProjectClick(row.original)}
-                className="text-left hover:text-primary transition-colors font-medium underline cursor-pointer truncate"
+                className="text-left hover:text-primary transition-colors font-medium underline cursor-pointer truncate block w-full"
+                title={project.project_title || undefined}
               >
                 {project.project_title}
               </button>
-              <div className="flex gap-1 shrink-0">
-                {project.github_url && (
-                  <a
-                    href={project.github_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary"
-                    aria-label="View GitHub repository"
-                  >
-                    <GithubIcon className="h-4 w-4" />
-                  </a>
-                )}
-                {submissionUrl && (
-                  <a
-                    href={submissionUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary"
-                    aria-label="View Devpost submission"
-                  >
-                    <DevpostIcon className="h-4 w-4" />
-                  </a>
-                )}
-              </div>
             </div>
           );
         },
@@ -253,7 +229,47 @@ export function ProjectTable({
           variant: "text" as const,
         },
         enableColumnFilter: true,
-        size: 240,
+        size: 200,
+      },
+      {
+        id: "links",
+        header: "Links",
+        cell: ({ row }) => {
+          const project = row.original;
+          const submissionUrl = project.submission_url;
+
+          return (
+            <div className="flex gap-1 shrink-0">
+              {project.github_url && (
+                <a
+                  href={project.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary"
+                  aria-label="View GitHub repository"
+                >
+                  <GithubIcon className="h-4 w-4" />
+                </a>
+              )}
+              {submissionUrl && (
+                <a
+                  href={submissionUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-muted-foreground hover:text-primary"
+                  aria-label="View Devpost submission"
+                >
+                  <DevpostIcon className="h-4 w-4" />
+                </a>
+              )}
+              {!project.github_url && !submissionUrl && (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+            </div>
+          );
+        },
+        enableSorting: false,
+        size: 80,
       },
 
       {
