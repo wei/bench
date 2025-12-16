@@ -10,7 +10,6 @@ import {
   Ruler,
   Sparkles,
 } from "lucide-react";
-import { useEffect, useState } from "react";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { StatusBadge } from "@/components/status/status-badge";
@@ -28,7 +27,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { getPrizeCategories } from "@/lib/data-service";
+import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
   getCodeReview,
   getMetrics,
@@ -54,22 +53,7 @@ export function ProjectDetailPane({
   onOpenChange,
   onRerun,
 }: ProjectDetailPaneProps) {
-  const [prizeCategoryMap, setPrizeCategoryMap] = useState<
-    Record<string, string>
-  >({});
-
-  useEffect(() => {
-    getPrizeCategories().then((categories) => {
-      const mapped = categories.reduce<Record<string, string>>(
-        (acc, category) => {
-          acc[category.slug] = category.name;
-          return acc;
-        },
-        {},
-      );
-      setPrizeCategoryMap(mapped);
-    });
-  }, []);
+  const { prizeCategoryRecord: prizeCategoryMap } = usePrizeCategories();
 
   if (!project) return null;
 

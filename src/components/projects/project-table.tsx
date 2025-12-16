@@ -20,9 +20,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { Tables } from "@/database.types";
 import { useDataTable } from "@/hooks/use-data-table";
-import { getPrizeCategories } from "@/lib/data-service";
+import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
   getComplexityColor,
   getPrizeStatusDisplay,
@@ -33,8 +32,6 @@ import {
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 import { useStore } from "@/lib/store";
 import { toTitleCase } from "@/lib/utils/string-utils";
-
-type PrizeCategory = Tables<"prize_categories">;
 
 interface ProjectTableProps {
   readonly projects: Project[];
@@ -92,29 +89,7 @@ export function ProjectTable({
     "complexity",
     parseAsArrayOf(parseAsString).withDefault([]),
   );
-  const [prizeCategories, setPrizeCategories] = React.useState<PrizeCategory[]>(
-    [],
-  );
-
-  React.useEffect(() => {
-    let isActive = true;
-    getPrizeCategories().then((categories) => {
-      if (isActive) {
-        setPrizeCategories(categories);
-      }
-    });
-    return () => {
-      isActive = false;
-    };
-  }, []);
-
-  const prizeCategoryMap = React.useMemo(() => {
-    const map = new Map<string, string>();
-    prizeCategories.forEach((cat) => {
-      map.set(cat.slug, cat.name);
-    });
-    return map;
-  }, [prizeCategories]);
+  const { prizeCategoryMap } = usePrizeCategories();
 
   // Filter data client-side based on URL state
   const filteredData = React.useMemo(() => {
