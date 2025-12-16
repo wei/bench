@@ -6,7 +6,10 @@ export async function POST(request: Request) {
     // Default behavior: roll 30 days and sync physical hackathons.
     // See `fetchMlhEvents()` for defaults.
     void request;
-    const result = await syncMlhEventsToDb();
+    const result = await syncMlhEventsToDb({
+      daysFromNow: 90,
+      imagesOnly: true,
+    });
 
     return NextResponse.json(result);
   } catch (error) {

@@ -11,6 +11,13 @@ type SyncResult = {
   events: Database["public"]["Tables"]["events"]["Row"][];
 };
 
+function formatDateYYYYMMDD(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function epochSecondsToIso(
   epochSeconds: number | null | undefined,
 ): string | null | undefined {
@@ -63,20 +70,46 @@ function mapMlhEventToEventInsert(event: MlhEventApi): EventInsert {
  * - Logs each event inserted (and each event skipped).
  * - Requires your Supabase policies to allow inserts/updates for the caller.
  */
+
 export async function syncMlhEventsToDb(args?: {
   limit?: number;
   startsAtGte?: string;
   endsAtLte?: string;
   eventFormatEq?: string;
   eventTypeEq?: string;
+  /** Rolling window size from today (default: 30). Overrides startsAtGte/endsAtLte when provided. */
+  daysFromNow?: number;
+  /** When true, only process events that have a logo_url or background_url. Default: false. */
+  imagesOnly?: boolean;
 }): Promise<SyncResult> {
-  const mlhEvents = await fetchMlhEvents({
+  const daysFromNowRaw = args?.daysFromNow;
+  const daysFromNow =
+    typeof daysFromNowRaw === "number" && Number.isFinite(daysFromNowRaw)
+      ? Math.max(0, Math.floor(daysFromNowRaw))
+      : undefined;
+
+  const startsAtRolling = formatDateYYYYMMDD(new Date());
+  const endsAtRollingDate = new Date();
+  endsAtRollingDate.setDate(endsAtRollingDate.getDate() + (daysFromNow ?? 30));
+  const endsAtRolling = formatDateYYYYMMDD(endsAtRollingDate);
+
+  const mlhEventsRaw = await fetchMlhEvents({
     limit: args?.limit,
-    startsAtGte: args?.startsAtGte,
-    endsAtLte: args?.endsAtLte,
+    startsAtGte:
+      daysFromNow !== undefined ? startsAtRolling : args?.startsAtGte,
+    endsAtLte: daysFromNow !== undefined ? endsAtRolling : args?.endsAtLte,
     eventFormatEq: args?.eventFormatEq,
     eventTypeEq: args?.eventTypeEq,
   });
+
+  const imagesOnly = args?.imagesOnly ?? false;
+  const mlhEvents = imagesOnly
+    ? mlhEventsRaw.filter((event) => {
+        const logo = event.logo_url;
+        const hasLogo = typeof logo === "string" && logo.length > 0;
+        return hasLogo;
+      })
+    : mlhEventsRaw;
 
   const rowsById = new Map<string, EventInsert>();
   for (const event of mlhEvents) {
@@ -105,7 +138,12 @@ export async function syncMlhEventsToDb(args?: {
 
   const rows = [...rowsById.values()];
   if (rows.length === 0) {
-    return { fetched: 0, inserted: 0, skippedExisting: 0, events: [] };
+    return {
+      fetched: mlhEventsRaw.length,
+      inserted: 0,
+      skippedExisting: 0,
+      events: [],
+    };
   }
 
   const supabase = await createClient();
@@ -140,7 +178,7 @@ export async function syncMlhEventsToDb(args?: {
 
   if (newRows.length === 0) {
     return {
-      fetched: mlhEvents.length,
+      fetched: mlhEventsRaw.length,
       inserted: 0,
       skippedExisting,
       events: [],
@@ -156,7 +194,7 @@ export async function syncMlhEventsToDb(args?: {
   }
 
   return {
-    fetched: mlhEvents.length,
+    fetched: mlhEventsRaw.length,
     inserted: newRows.length,
     skippedExisting,
     events: data ?? [],
