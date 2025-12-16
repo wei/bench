@@ -33,7 +33,6 @@ export function ProjectDetailSheet({
 }: ProjectDetailSheetProps) {
   if (!project) return null;
 
-  const devpostUrl = project.submission_url;
   const prizeResults = parsePrizeResults(project.prize_results);
 
   return (
@@ -58,9 +57,9 @@ export function ProjectDetailSheet({
                 GitHub Repository
               </a>
             )}
-            {(project.submission_url || devpostUrl) && (
+            {project.submission_url && (
               <a
-                href={project.submission_url || devpostUrl || ""}
+                href={project.submission_url || ""}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 text-sm text-(--mlh-blue) hover:underline"

@@ -71,7 +71,6 @@ export function ProjectDetailPane({
 
   if (!project) return null;
 
-  const devpostUrl = project.submission_url;
   const codeReview = getCodeReview(project);
   const metrics = getMetrics(project);
   const prizeResults = parsePrizeResults(project.prize_results);
@@ -188,9 +187,9 @@ export function ProjectDetailPane({
                     GitHub Repository
                   </a>
                 )}
-                {(project.submission_url || devpostUrl) && (
+                {project.submission_url && (
                   <a
-                    href={project.submission_url || devpostUrl || ""}
+                    href={project.submission_url || ""}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-2 text-sm text-(--mlh-blue) hover:underline"

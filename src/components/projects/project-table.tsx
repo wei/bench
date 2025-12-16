@@ -244,7 +244,6 @@ export function ProjectTable({
         ),
         cell: ({ row }) => {
           const project = row.original;
-          const devpostUrl = project.submission_url;
           const submissionUrl = project.submission_url;
 
           return (
@@ -275,17 +274,6 @@ export function ProjectTable({
                     rel="noopener noreferrer"
                     className="text-muted-foreground hover:text-primary"
                     aria-label="View Devpost submission"
-                  >
-                    <DevpostIcon className="h-4 w-4" />
-                  </a>
-                )}
-                {!submissionUrl && devpostUrl && (
-                  <a
-                    href={devpostUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-primary"
-                    aria-label="View Devpost project"
                   >
                     <DevpostIcon className="h-4 w-4" />
                   </a>
