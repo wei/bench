@@ -1,7 +1,10 @@
 "use client";
 
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import type {
+  RealtimeChannel,
+  RealtimePostgresChangesPayload,
+} from "@supabase/supabase-js";
+import { useEffect, useRef, useState } from "react";
 import type { Database } from "@/database.types";
 import { createClient } from "@/lib/supabase/client";
 
@@ -11,8 +14,13 @@ export function ProjectsList({ eventId }: { eventId?: string }) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const reconnectAttemptsRef = useRef(0);
+  const isUnmountingRef = useRef(false);
 
   useEffect(() => {
+    isUnmountingRef.current = false;
     const supabase = createClient();
 
     // Initial fetch
@@ -42,37 +50,104 @@ export function ProjectsList({ eventId }: { eventId?: string }) {
 
     fetchProjects();
 
-    // Set up real-time subscription
-    const channel = supabase
-      .channel("projects-changes")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "projects",
-          ...(eventId && { filter: `event_id=eq.${eventId}` }),
-        },
-        (payload: RealtimePostgresChangesPayload<Project>) => {
-          if (payload.eventType === "INSERT") {
-            setProjects((prev) => [payload.new, ...prev]);
-          } else if (payload.eventType === "UPDATE") {
-            setProjects((prev) =>
-              prev.map((project) =>
-                project.id === payload.new.id ? payload.new : project,
-              ),
+    const setupSubscription = () => {
+      // Clean up any existing channel
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
+
+      // Clear any pending reconnect
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      // Set up real-time subscription
+      const channel = supabase
+        .channel(`projects-changes-${eventId || "all"}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "projects",
+            ...(eventId && { filter: `event_id=eq.${eventId}` }),
+          },
+          (payload: RealtimePostgresChangesPayload<Project>) => {
+            if (payload.eventType === "INSERT") {
+              setProjects((prev) => [payload.new, ...prev]);
+            } else if (payload.eventType === "UPDATE") {
+              setProjects((prev) =>
+                prev.map((project) =>
+                  project.id === payload.new.id ? payload.new : project,
+                ),
+              );
+            } else if (payload.eventType === "DELETE") {
+              setProjects((prev) =>
+                prev.filter((project) => project.id !== payload.old.id),
+              );
+            }
+          },
+        )
+        .subscribe((status) => {
+          if (status === "SUBSCRIBED") {
+            reconnectAttemptsRef.current = 0; // Reset on successful subscription
+          } else if (
+            status === "TIMED_OUT" ||
+            status === "CLOSED" ||
+            status === "CHANNEL_ERROR"
+          ) {
+            console.warn(
+              `Projects subscription ${status.toLowerCase()}, attempting to reconnect...`,
             );
-          } else if (payload.eventType === "DELETE") {
-            setProjects((prev) =>
-              prev.filter((project) => project.id !== payload.old.id),
-            );
+            attemptReconnect();
           }
-        },
-      )
-      .subscribe();
+        });
+
+      channelRef.current = channel;
+    };
+
+    const attemptReconnect = () => {
+      if (isUnmountingRef.current) return;
+
+      // Exponential backoff: 1s, 2s, 4s, 8s, max 30s
+      const maxDelay = 30000;
+      const delay = Math.min(
+        2 ** reconnectAttemptsRef.current * 1000,
+        maxDelay,
+      );
+
+      reconnectAttemptsRef.current += 1;
+
+      console.log(
+        `Attempting to reconnect projects subscription (attempt ${reconnectAttemptsRef.current}) in ${delay}ms...`,
+      );
+
+      reconnectTimeoutRef.current = setTimeout(() => {
+        if (!isUnmountingRef.current) {
+          setupSubscription();
+        }
+      }, delay);
+    };
+
+    // Initial subscription setup
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(channel);
+      isUnmountingRef.current = true;
+
+      // Clear reconnect timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
+      }
+
+      // Remove channel
+      if (channelRef.current) {
+        supabase.removeChannel(channelRef.current);
+        channelRef.current = null;
+      }
     };
   }, [eventId]);
 
