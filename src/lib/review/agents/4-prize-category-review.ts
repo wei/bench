@@ -1,6 +1,7 @@
-import { google } from "@ai-sdk/google";
+import { openrouter } from "@openrouter/ai-sdk-provider";
 import { generateObject } from "ai";
 import { z } from "zod";
+// import { google } from "@ai-sdk/google";
 // import { getDoAI, getDoAIModelName } from "@/lib/ai/doai";
 import { grepAny } from "@/lib/review/grep-tools";
 import {
@@ -171,7 +172,9 @@ export async function prizeCategoryReviewAgent(
   try {
     // const doai = getDoAI();
     const { object } = await generateObject({
-      model: google("gemini-2.5-flash"), //doai.chat(getDoAIModelName()),
+      // model: google("gemini-2.5-flash"),
+      // model: doai.chat(getDoAIModelName()),
+      model: openrouter("google/gemini-2.5-flash"),
       schema: prizeReviewSchema,
       system: buildPrizeCategorySystemPrompt(systemPrompt),
       prompt,

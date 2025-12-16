@@ -8,15 +8,15 @@ importers:
 
   .:
     dependencies:
-      '@ai-sdk/google':
-        specifier: ^2.0.46
-        version: 2.0.46(zod@3.25.76)
       '@ai-sdk/openai':
         specifier: ^2.0.86
         version: 2.0.86(zod@3.25.76)
       '@octokit/rest':
         specifier: ^22.0.1
         version: 22.0.1
+      '@openrouter/ai-sdk-provider':
+        specifier: ^1.5.4
+        version: 1.5.4(ai@5.0.113(zod@3.25.76))(zod@3.25.76)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.7))(@types/react@19.2.7)(react-dom@19.2.1(react@19.2.1))(react@19.2.1)
@@ -167,12 +167,6 @@ packages:
 
   '@ai-sdk/gateway@2.0.21':
     resolution: {integrity: sha512-BwV7DU/lAm3Xn6iyyvZdWgVxgLu3SNXzl5y57gMvkW4nGhAOV5269IrJzQwGt03bb107sa6H6uJwWxc77zXoGA==}
-    engines: {node: '>=18'}
-    peerDependencies:
-      zod: ^3.25.76 || ^4.1.8
-
-  '@ai-sdk/google@2.0.46':
-    resolution: {integrity: sha512-8PK6u4sGE/kXebd7ZkTp+0aya4kNqzoqpS5m7cHY2NfTK6fhPc6GNvE+MZIZIoHQTp5ed86wGBdeBPpFaaUtyg==}
     engines: {node: '>=18'}
     peerDependencies:
       zod: ^3.25.76 || ^4.1.8
@@ -769,6 +763,16 @@ packages:
 
   '@open-draft/until@2.1.0':
     resolution: {integrity: sha512-U69T3ItWHvLwGg5eJ0n3I62nWuE6ilHlmz7zM0npLBRvPRd7e6NYmg54vvRtP5mZG7kZqZCFVdsTWo7BPtBujg==}
+
+  '@openrouter/ai-sdk-provider@1.5.4':
+    resolution: {integrity: sha512-xrSQPUIH8n9zuyYZR0XK7Ba0h2KsjJcMkxnwaYfmv13pKs3sDkjPzVPPhlhzqBGddHb5cFEwJ9VFuFeDcxCDSw==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      ai: ^5.0.0
+      zod: ^3.24.1 || ^v4
+
+  '@openrouter/sdk@0.1.27':
+    resolution: {integrity: sha512-RH//L10bSmc81q25zAZudiI4kNkLgxF2E+WU42vghp3N6TEvZ6F0jK7uT3tOxkEn91gzmMw9YVmDENy7SJsajQ==}
 
   '@opentelemetry/api@1.9.0':
     resolution: {integrity: sha512-3giAOQvZiH5F9bMlMiv8+GSPMeqg0dbaeo58/0SlA9sxSqZhnUtxzX9/2FzyhS9sWQf5S0GJE0AKBrFqjpeYcg==}
@@ -3220,12 +3224,6 @@ snapshots:
       '@vercel/oidc': 3.0.5
       zod: 3.25.76
 
-  '@ai-sdk/google@2.0.46(zod@3.25.76)':
-    dependencies:
-      '@ai-sdk/provider': 2.0.0
-      '@ai-sdk/provider-utils': 3.0.19(zod@3.25.76)
-      zod: 3.25.76
-
   '@ai-sdk/openai@2.0.86(zod@3.25.76)':
     dependencies:
       '@ai-sdk/provider': 2.0.0
@@ -3841,6 +3839,16 @@ snapshots:
       outvariant: 1.4.3
 
   '@open-draft/until@2.1.0': {}
+
+  '@openrouter/ai-sdk-provider@1.5.4(ai@5.0.113(zod@3.25.76))(zod@3.25.76)':
+    dependencies:
+      '@openrouter/sdk': 0.1.27
+      ai: 5.0.113(zod@3.25.76)
+      zod: 3.25.76
+
+  '@openrouter/sdk@0.1.27':
+    dependencies:
+      zod: 3.25.76
 
   '@opentelemetry/api@1.9.0': {}
 
