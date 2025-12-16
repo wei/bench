@@ -53,7 +53,7 @@ export function ImportEventsButton() {
       disabled={mutation.isPending}
     >
       <RefreshCw className={mutation.isPending ? "animate-spin" : ""} />
-      {mutation.isPending ? "Importing…" : "Import Events"}
+      {mutation.isPending ? "Importing…" : "Sync Events"}
     </Button>
   );
 }
