@@ -229,71 +229,67 @@ export function ProjectTableNew({
         header: ({ column }: { column: Column<Project, unknown> }) => (
           <DataTableColumnHeader column={column} label="Project" />
         ),
-        cell: ({ row }) => (
-          <button
-            type="button"
-            onClick={() => onProjectClick(row.original)}
-            className="text-left hover:text-primary transition-colors font-medium underline cursor-pointer"
-          >
-            {row.original.project_title}
-          </button>
-        ),
+        cell: ({ row }) => {
+          const project = row.original;
+          const devpostUrl = getDevpostUrl(project);
+          const submissionUrl = project.submission_url;
+
+          return (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => onProjectClick(row.original)}
+                className="text-left hover:text-primary transition-colors font-medium underline cursor-pointer truncate"
+              >
+                {project.project_title}
+              </button>
+              <div className="flex gap-1 shrink-0">
+                {project.github_url && (
+                  <a
+                    href={project.github_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary"
+                    aria-label="View GitHub repository"
+                  >
+                    <GithubIcon className="h-4 w-4" />
+                  </a>
+                )}
+                {submissionUrl && (
+                  <a
+                    href={submissionUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary"
+                    aria-label="View Devpost submission"
+                  >
+                    <DevpostIcon className="h-4 w-4" />
+                  </a>
+                )}
+                {!submissionUrl && devpostUrl && (
+                  <a
+                    href={devpostUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-muted-foreground hover:text-primary"
+                    aria-label="View Devpost project"
+                  >
+                    <DevpostIcon className="h-4 w-4" />
+                  </a>
+                )}
+              </div>
+            </div>
+          );
+        },
         meta: {
           label: "Project Title",
           placeholder: "Search projects...",
           variant: "text" as const,
         },
         enableColumnFilter: true,
-        size: 200,
+        size: 240,
       },
-      {
-        id: "links",
-        header: "Links",
-        cell: ({ row }) => {
-          const project = row.original;
-          const devpostUrl = getDevpostUrl(project);
-          const submissionUrl = project.submission_url;
-          return (
-            <div className="flex gap-2">
-              {project.github_url && (
-                <a
-                  href={project.github_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary"
-                  aria-label="View GitHub repository"
-                >
-                  <GithubIcon className="h-4 w-4" />
-                </a>
-              )}
-              {submissionUrl && (
-                <a
-                  href={submissionUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary"
-                  aria-label="View Devpost submission"
-                >
-                  <DevpostIcon className="h-4 w-4" />
-                </a>
-              )}
-              {!submissionUrl && devpostUrl && (
-                <a
-                  href={devpostUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-muted-foreground hover:text-primary"
-                  aria-label="View Devpost project"
-                >
-                  <DevpostIcon className="h-4 w-4" />
-                </a>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-        size: 80,
-      },
+
       {
         id: "technical_complexity",
         accessorKey: "technical_complexity",
