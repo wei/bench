@@ -8,7 +8,6 @@ import {
   getFacetedRowModel,
   getFacetedUniqueValues,
   getFilteredRowModel,
-  getPaginationRowModel,
   getSortedRowModel,
   type RowSelectionState,
   type SortingState,
@@ -21,7 +20,6 @@ import * as React from "react";
 interface UseDataTableOptions<TData> extends Partial<TableOptions<TData>> {
   data: TData[];
   columns: ColumnDef<TData>[];
-  pageCount?: number;
   initialState?: {
     sorting?: SortingState;
     columnFilters?: ColumnFiltersState;
@@ -38,7 +36,6 @@ interface UseDataTableOptions<TData> extends Partial<TableOptions<TData>> {
 export function useDataTable<TData>({
   data,
   columns,
-  pageCount = 1,
   initialState,
   getRowId,
   ...options
@@ -59,7 +56,6 @@ export function useDataTable<TData>({
   const table = useReactTable({
     data,
     columns,
-    pageCount,
     state: {
       sorting,
       columnFilters,
@@ -75,12 +71,10 @@ export function useDataTable<TData>({
     onGlobalFilterChange: setGlobalFilter,
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFacetedRowModel: getFacetedRowModel(),
     getFacetedUniqueValues: getFacetedUniqueValues(),
     getFacetedMinMaxValues: getFacetedMinMaxValues(),
-    manualPagination: pageCount > 1,
     getRowId,
     ...options,
   });
