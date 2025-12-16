@@ -79,7 +79,8 @@ export function ProcessingModal() {
       return "Analyzing code structure and complexity";
     if (status === "processing:prize_category_review")
       return "Evaluating prize category eligibility";
-    if (status.startsWith("invalid")) return "Processing failed";
+    if (status.startsWith("invalid")) return "Missing required information";
+    if (status === "errored") return "Processing failed";
     return "Queued for processing";
   };
 
