@@ -3,6 +3,43 @@ import type { Octokit } from "@octokit/rest";
 import { createGithubClient } from "@/lib/github/client";
 import type { GithubRepoInfo } from "@/lib/review/types";
 
+const COMMON_EXCLUDE_PATTERNS = [
+  "node_modules/",
+  ".git",
+  "venv/",
+  ".venv/",
+  "vendor/",
+  ".next/",
+  ".vercel/",
+  ".idea/",
+  ".vscode/",
+  "out/",
+  "dist/",
+  "build/",
+  "target/",
+  "coverage/",
+  "__pycache__/",
+  ".cache",
+  ".DS_Store",
+  ".env",
+  "*.log",
+  "*.tmp",
+  "*.swp",
+  "*.bak",
+  "*.exe",
+  "*.dll",
+  "*.so",
+  "*.dylib",
+  "*.jar",
+  "*.war",
+  "*.zip",
+  "*.tar",
+  "*.tar.gz",
+  "*.tgz",
+  "*.deb",
+  "*.rpm",
+];
+
 type Commit = {
   commit: {
     author?: {
@@ -133,183 +170,43 @@ function getGithubStatus(error: unknown) {
   return null;
 }
 
-function shouldExclude(path: string): boolean {
-  const excludePatterns = [
-    "node_modules",
-    ".git",
-    "dist",
-    "build",
-    "__pycache__",
-    ".cache",
-    ".DS_Store",
-    ".env",
-    "*.log",
-    "*.tmp",
-    "*.swp",
-    "*.bak",
-    "*.exe",
-    "*.dll",
-    "*.so",
-    "*.dylib",
-    "*.jar",
-    "*.war",
-    "*.zip",
-    "*.tar.gz",
-    "*.tgz",
-    "*.deb",
-    "*.rpm",
-  ];
-
-  for (const pattern of excludePatterns) {
-    if (pattern.startsWith("*.")) {
-      if (path.toLowerCase().endsWith(pattern.slice(2).toLowerCase()))
-        return true;
-    } else if (path.toLowerCase().includes(pattern.toLowerCase())) return true;
-  }
-  return false;
-}
-
-async function collectFiles(
-  github: Octokit,
+export async function getRepoContent(
+  _github: Octokit,
   repo: GithubRepoInfo,
-  path: string = "",
-  files: CollectedFile[] = [],
-): Promise<CollectedFile[]> {
-  try {
-    const response = await github.repos.getContent({
-      owner: repo.owner,
-      repo: repo.repo,
-      path,
-    });
-    const contents = response.data;
-
-    if (Array.isArray(contents)) {
-      for (const item of contents) {
-        if (item.type === "dir") {
-          await collectFiles(github, repo, item.path, files);
-        } else if (item.type === "file") {
-          if (!shouldExclude(item.path)) {
-            files.push({
-              path: item.path,
-              size: typeof item.size === "number" ? item.size : null,
-            });
-          }
-        }
-      }
-    }
-  } catch (error) {
-    console.error(`Failed to collect files at path ${path}`, error);
-  }
-  return files;
-}
-
-type CollectedFile = {
-  path: string;
-  size: number | null;
-};
-
-async function fetchRepoFileText(
-  github: Octokit,
-  repo: GithubRepoInfo,
-  path: string,
 ): Promise<string> {
-  const response = await github.request(
-    "GET /repos/{owner}/{repo}/contents/{path}",
-    {
-      owner: repo.owner,
-      repo: repo.repo,
-      path,
-      headers: {
-        accept: "application/vnd.github.raw",
-      },
-    },
-  );
+  try {
+    const response = await fetch("https://gitingest.com/api/ingest", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        input_text: `https://github.com/${repo.owner}/${repo.repo}`,
+        token: "",
+        max_file_size: "50",
+        pattern_type: "exclude",
+        pattern: COMMON_EXCLUDE_PATTERNS.join("\n"),
+      }),
+    });
 
-  const data: unknown = response.data;
-  if (typeof data === "string") return data;
-
-  if (
-    typeof data === "object" &&
-    data &&
-    "content" in data &&
-    "encoding" in data
-  ) {
-    const content = (data as { content?: unknown }).content;
-    const encoding = (data as { encoding?: unknown }).encoding;
-    if (typeof content === "string" && encoding === "base64") {
-      return Buffer.from(content, "base64").toString("utf-8");
+    if (!response.ok) {
+      console.error(
+        `Failed to ingest repository ${repo.owner}/${repo.repo}. Status: ${response.status}`,
+      );
+      return "";
     }
-  }
 
-  if (Buffer.isBuffer(data)) return data.toString("utf-8");
-  if (data instanceof Uint8Array) return Buffer.from(data).toString("utf-8");
+    const data = (await response.json()) as {
+      repo_url: string;
+      tree: string;
+      content: string;
+    };
+
+    console.debug(
+      `Fetched repository content via gitingest for ${repo.owner}/${repo.repo}. ${data.tree}`,
+    );
+    return `# GitHub Repo: ${data.repo_url}\n\n## ${data.tree}\n${data.content}`;
+  } catch (error) {
+    console.error("Failed to fetch repository content via gitingest", error);
+  }
 
   return "";
-}
-
-async function mapLimit<T, R>(
-  items: T[],
-  limit: number,
-  mapper: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const results: R[] = new Array(items.length);
-  let cursor = 0;
-
-  const workers = Array.from({ length: Math.max(1, limit) }, async () => {
-    while (cursor < items.length) {
-      const index = cursor;
-      cursor += 1;
-      results[index] = await mapper(items[index]);
-    }
-  });
-
-  await Promise.all(workers);
-  return results;
-}
-
-export async function getRepoContent(
-  github: Octokit,
-  repo: GithubRepoInfo,
-): Promise<string> {
-  const files = await collectFiles(github, repo);
-  let result = "";
-
-  console.debug(
-    `Collected ${files.length} files from repository ${repo.owner}/${repo.repo}.`,
-  );
-
-  const MAX_FILE_BYTES = 50_000;
-  const MAX_CONCURRENCY = 4;
-
-  const selectedFiles = files.filter((file) => {
-    if (!file.path) return false;
-    if (shouldExclude(file.path)) return false;
-    if (file.size != null && file.size > MAX_FILE_BYTES) return false;
-    return true;
-  });
-
-  const contents = await mapLimit(
-    selectedFiles,
-    MAX_CONCURRENCY,
-    async (file) => {
-      try {
-        const content = await fetchRepoFileText(github, repo, file.path);
-        return { path: file.path, content };
-      } catch (error) {
-        console.error(`Failed to fetch content for ${file.path}`, error);
-        return { path: file.path, content: "" };
-      }
-    },
-  );
-
-  for (const file of contents) {
-    if (file.content) {
-      result += `## File: \`${file.path}\`
-${file.content}
-
-`;
-    }
-  }
-
-  return result;
 }

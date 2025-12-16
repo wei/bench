@@ -61,17 +61,21 @@ export async function startProjectReview(project: ProjectWithEvent) {
     null,
   );
 
-  // Prize Category Agent Review sequencially
-  for (const prizeSlug of project.standardized_opt_in_prizes || []) {
-    console.debug(`Starting prize category review for prize ${prizeSlug}.`);
+  const prizeSlugs = project.standardized_opt_in_prizes || [];
+
+  if (prizeSlugs.length > 0) {
+    console.debug(
+      `Starting prize category review for prizes: ${prizeSlugs.join(", ")}`,
+    );
+
     await setProjectStatus(
       supabase,
       context.project.id,
       "processing:prize_category_review",
-      `Processing prize: ${prizeSlug}`,
+      `Processing prizes: ${prizeSlugs.join(", ")}`,
     );
 
-    await prizeCategoryReviewAgent(context, prizeSlug);
+    await prizeCategoryReviewAgent(context, prizeSlugs);
   }
 
   console.debug(

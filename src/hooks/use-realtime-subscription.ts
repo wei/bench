@@ -44,8 +44,11 @@ export function useRealtimeSubscription() {
         (payload: RealtimePostgresChangesPayload<Project>) => {
           console.log("Realtime project update:", payload);
           const { eventType } = payload;
-          const newRecord = payload.new as Project;
-          const oldRecord = payload.old as Project;
+          // Supabase can send partial rows on UPDATE (only changed columns),
+          // so merge with the existing cached project to avoid dropping fields
+          // like prize_results when the final status update arrives.
+          const newRecord = payload.new as Partial<Project>;
+          const oldRecord = payload.old as Partial<Project>;
           const projectId = newRecord?.id || oldRecord?.id;
           const eventId = newRecord?.event_id || oldRecord?.event_id;
 
@@ -64,9 +67,14 @@ export function useRealtimeSubscription() {
 
             queryClient.setQueryData(queryKey, (current: Project[]) => {
               if (!current) return current;
-              if (eventType === "INSERT") return [newRecord, ...current];
+              if (eventType === "INSERT")
+                return [newRecord as Project, ...current];
               if (eventType === "UPDATE")
-                return current.map((p) => (p.id === projectId ? newRecord : p));
+                return current.map((p) =>
+                  p.id === projectId
+                    ? ({ ...p, ...oldRecord, ...newRecord } as Project)
+                    : p,
+                );
               if (eventType === "DELETE")
                 return current.filter((p) => p.id !== projectId);
               return current;
