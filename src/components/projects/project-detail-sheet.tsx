@@ -17,7 +17,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { getDevpostUrl, parsePrizeResults } from "@/lib/project-utils";
+import { parsePrizeResults } from "@/lib/project-utils";
 import type { Project } from "@/lib/store";
 
 interface ProjectDetailSheetProps {
@@ -33,7 +33,7 @@ export function ProjectDetailSheet({
 }: ProjectDetailSheetProps) {
   if (!project) return null;
 
-  const devpostUrl = getDevpostUrl(project);
+  const devpostUrl = project.submission_url;
   const prizeResults = parsePrizeResults(project.prize_results);
 
   return (

@@ -23,7 +23,6 @@ import {
 import { getPrizeCategories } from "@/lib/data-service";
 import {
   getCodeReview,
-  getDevpostUrl,
   getMetrics,
   getPrizeTracks,
   parsePrizeResults,
@@ -62,7 +61,7 @@ export function ProjectDetailPane({
 
   if (!project) return null;
 
-  const devpostUrl = getDevpostUrl(project);
+  const devpostUrl = project.submission_url;
   const codeReview = getCodeReview(project);
   const metrics = getMetrics(project);
   const prizeResults = parsePrizeResults(project.prize_results);
@@ -277,7 +276,7 @@ export function ProjectDetailPane({
                         color =
                           "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
                         reason = result.message || "Criteria not met";
-                      } else if ((result as any).status === "error") {
+                      } else if (result.status === "error") {
                         status = "error";
                         color =
                           "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";

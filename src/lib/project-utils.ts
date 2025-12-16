@@ -1,17 +1,5 @@
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 
-// Get devpost_url from csv_row or return null
-export function getDevpostUrl(project: Project): string | null {
-  if (
-    project.csv_row &&
-    typeof project.csv_row === "object" &&
-    "devpost_url" in project.csv_row
-  ) {
-    return project.csv_row.devpost_url as string | null;
-  }
-  return null;
-}
-
 // Get team_members from csv_row
 export function getTeamMembers(project: Project): Array<{
   name: string;
@@ -143,37 +131,46 @@ export function getPrizeTracks(project: Project): string[] {
   return [];
 }
 
-// Get status color for project processing status
-export function getStatusColor(status: ProjectProcessingStatus): string {
+// Get status color for badge
+export function getStatusBadgeColor(status: ProjectProcessingStatus): string {
   switch (status) {
     case "unprocessed":
-      return "bg-gray-400";
+      return "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
     case "processing:code_review":
     case "processing:prize_category_review":
-      return "bg-(--mlh-blue) animate-pulse";
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 animate-pulse";
     case "processed":
-      return "bg-(--mlh-teal)";
+      return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
     case "invalid:github_inaccessible":
     case "invalid:rule_violation":
-      return "bg-(--mlh-red)";
+      return "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
+    case "errored":
+      return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
     default:
-      return "bg-gray-400";
+      return "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300";
   }
 }
 
-// Get short status description (titlecased)
-export function getStatusDescription(status: ProjectProcessingStatus): string {
+// Get short status label for badge
+export function getStatusLabel(status: ProjectProcessingStatus): string {
   if (status.startsWith("invalid:")) {
     return "Invalid";
   }
   if (status.startsWith("processing:")) {
-    const part = status.split(":")[1];
-    return part
-      .split("_")
-      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(" ");
+    return "Processing";
+  }
+  if (status === "errored") {
+    return "Error";
   }
   return status.charAt(0).toUpperCase() + status.slice(1);
+}
+
+// Get detailed status message for tooltip
+export function getStatusTooltipMessage(project: Project): string {
+  if (project.project_processing_status_message) {
+    return project.project_processing_status_message;
+  }
+  return "";
 }
 
 // Get complexity color

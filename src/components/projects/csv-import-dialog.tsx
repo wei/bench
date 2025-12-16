@@ -12,9 +12,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { Tables } from "@/database.types";
-
-type Project = Tables<"projects">;
 
 interface CSVImportDialogProps {
   readonly open: boolean;
@@ -73,7 +70,7 @@ export function CSVImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-150">
         <DialogHeader>
           <DialogTitle>Import Projects from CSV</DialogTitle>
           <DialogDescription>

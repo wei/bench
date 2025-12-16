@@ -23,10 +23,10 @@ import { useDataTable } from "@/hooks/use-data-table";
 import { getPrizeCategories } from "@/lib/data-service";
 import {
   getComplexityColor,
-  getDevpostUrl,
   getPrizeTracks,
-  getStatusColor,
-  getStatusDescription,
+  getStatusBadgeColor,
+  getStatusLabel,
+  getStatusTooltipMessage,
   parsePrizeResults,
 } from "@/lib/project-utils";
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
@@ -202,14 +202,24 @@ export function ProjectTableNew({
         cell: ({ cell }) => {
           const status = cell.getValue<ProjectProcessingStatus>();
           return (
-            <div className="flex items-center gap-2">
-              <div
-                className={`h-3 w-3 rounded-full ${getStatusColor(status)}`}
-              />
-              <span className="text-xs text-muted-foreground">
-                {getStatusDescription(status)}
-              </span>
-            </div>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Badge
+                    variant="outline"
+                    className={`cursor-help border-0 ${getStatusBadgeColor(
+                      status,
+                    )}`}
+                  >
+                    {getStatusLabel(status)}
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="font-semibold">{getStatusLabel(status)}</p>
+                  <p>{getStatusTooltipMessage(cell.row.original)}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           );
         },
         meta: {
@@ -231,7 +241,7 @@ export function ProjectTableNew({
         ),
         cell: ({ row }) => {
           const project = row.original;
-          const devpostUrl = getDevpostUrl(project);
+          const devpostUrl = project.submission_url;
           const submissionUrl = project.submission_url;
 
           return (
@@ -344,7 +354,7 @@ export function ProjectTableNew({
                         color =
                           "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
                         message = result.message || "Criteria not met";
-                      } else if ((result as any).status === "error") {
+                      } else if (result.status === "error") {
                         status = "error";
                         color =
                           "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
@@ -477,8 +487,6 @@ export function ProjectTableNew({
     },
     getRowId: (row) => row.id,
   });
-
-  const selectedRows = table.getFilteredSelectedRowModel().rows;
 
   const handleRunAll = () => {
     const allIds = filteredData.map((p) => p.id);

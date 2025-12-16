@@ -9,12 +9,7 @@ import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
 import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useRealtimeSubscription } from "@/hooks/use-realtime-subscription";
-import {
-  getEvents,
-  getPrizeCategories,
-  getProjects,
-  startProjectReview,
-} from "@/lib/data-service";
+import { startProjectReview } from "@/lib/data-service";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
 
@@ -52,10 +47,7 @@ export function DashboardRoot({ children }: DashboardRootProps) {
   const {
     events,
     projects,
-    setProjects,
-    setPrizeCategories,
     setSelectedEventId,
-    addProjects,
     setProcessingProjects,
     setShowProcessingModal,
     addNotification,
