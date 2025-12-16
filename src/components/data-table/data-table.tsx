@@ -18,9 +18,9 @@ interface DataTableProps<TData> {
 
 export function DataTable<TData>({ table, children }: DataTableProps<TData>) {
   return (
-    <div className="data-table-container space-y-4">
+    <div className="data-table-container space-y-4 relative">
       {children}
-      <div className="rounded-md border">
+      <div className="rounded-md border relative">
         <div className="relative w-full">
           <table className="w-full caption-bottom text-sm">
             <TableHeader>

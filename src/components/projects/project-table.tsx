@@ -9,6 +9,7 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
+import { ProcessingModal } from "@/components/processing-modal";
 import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -68,6 +69,11 @@ const complexityOptions = [
   { label: "Intermediate", value: "intermediate" },
   { label: "Advanced", value: "advanced" },
 ];
+
+// Helper function to check if a project is failed/invalid/errored
+function isFailedOrInvalidOrErrored(status: ProjectProcessingStatus): boolean {
+  return status === "errored" || status.startsWith("invalid:");
+}
 
 export function ProjectTable({
   projects,
@@ -436,22 +442,60 @@ export function ProjectTable({
     onBatchRun(allIds);
   };
 
+  // Get all failed/invalid/errored project IDs
+  const failedInvalidErroredProjects = React.useMemo(() => {
+    return filteredData.filter((p) => isFailedOrInvalidOrErrored(p.status));
+  }, [filteredData]);
+
+  const handleRerunFailed = () => {
+    const failedIds = failedInvalidErroredProjects.map((p) => p.id);
+    onBatchRun(failedIds);
+  };
+
   const allProcessed =
     filteredData.length > 0 &&
     filteredData.every((p) => p.status === "processed");
   const hasNoProjects = filteredData.length === 0;
+  const hasFailedProjects = failedInvalidErroredProjects.length > 0;
+
+  const { showProcessingModal } = useStore();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 relative">
       <DataTable table={table}>
-        <DataTableToolbar
-          table={table}
-          onRunAll={handleRunAll}
-          onRunSelected={(ids) => onBatchRun(ids)}
-          onImport={onImport}
-          allProcessed={allProcessed}
-          hasNoProjects={hasNoProjects}
-        />
+        {/* Overlay background when processing - contained within DataTable */}
+        {showProcessingModal && (
+          <div className="absolute inset-0 bg-blue-50/20 dark:bg-blue-950/50 backdrop-blur-xs z-40 rounded-md pointer-events-none" />
+        )}
+
+        <div
+          className={
+            showProcessingModal
+              ? "opacity-50 pointer-events-none transition-opacity"
+              : ""
+          }
+        >
+          <DataTableToolbar
+            table={table}
+            onRunAll={handleRunAll}
+            onRunSelected={(ids) => onBatchRun(ids)}
+            onRerunFailed={handleRerunFailed}
+            onImport={onImport}
+            allProcessed={allProcessed}
+            hasNoProjects={hasNoProjects}
+            hasFailedProjects={hasFailedProjects}
+            failedProjectsCount={failedInvalidErroredProjects.length}
+          />
+        </div>
+
+        {/* Processing modal - sticky positioned to stay in viewport while scrolling, contained within DataTable */}
+        {showProcessingModal && (
+          <div className="sticky top-4 z-50 flex justify-center pointer-events-none -mb-4 pb-4">
+            <div className="pointer-events-auto w-full max-w-6xl mx-4">
+              <ProcessingModal />
+            </div>
+          </div>
+        )}
       </DataTable>
     </div>
   );

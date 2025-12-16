@@ -1,7 +1,7 @@
 "use client";
 
 import type { Table as TanstackTable } from "@tanstack/react-table";
-import { Play, Search, Upload, X } from "lucide-react";
+import { Play, RefreshCw, Search, Upload, X } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,18 +18,24 @@ interface DataTableToolbarProps<TData> {
   table: TanstackTable<TData>;
   onRunAll?: () => void;
   onRunSelected?: (selectedIds: string[]) => void;
+  onRerunFailed?: () => void;
   onImport?: () => void;
   allProcessed?: boolean;
   hasNoProjects?: boolean;
+  hasFailedProjects?: boolean;
+  failedProjectsCount?: number;
 }
 
 export function DataTableToolbar<TData>({
   table,
   onRunAll,
   onRunSelected,
+  onRerunFailed,
   onImport,
   allProcessed = false,
   hasNoProjects = false,
+  hasFailedProjects = false,
+  failedProjectsCount = 0,
 }: DataTableToolbarProps<TData>) {
   const selectedRows = table.getFilteredSelectedRowModel().rows;
   const selectedIds = selectedRows.map(
@@ -106,6 +112,12 @@ export function DataTableToolbar<TData>({
             {hasSelection
               ? `Run ${selectedIds.length} Selected`
               : "Run All Projects"}
+          </Button>
+        )}
+        {hasFailedProjects && onRerunFailed && (
+          <Button onClick={onRerunFailed} variant="outline" className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            Rerun Failed ({failedProjectsCount})
           </Button>
         )}
         {onImport && (

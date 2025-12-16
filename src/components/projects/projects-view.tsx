@@ -1,7 +1,6 @@
 "use client";
 
 import Image from "next/image";
-import { ProcessingModal } from "@/components/processing-modal";
 import { ProjectTable } from "@/components/projects/project-table";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
@@ -32,8 +31,6 @@ export function ProjectsView({
   const activeEvent = activeEventId
     ? events.find((e) => e.id === activeEventId)
     : null;
-
-  const { showProcessingModal } = useStore();
 
   const projectsTitle = activeEvent?.name;
   const eventLogoUrl = activeEvent?.logo_url ?? null;
@@ -66,34 +63,13 @@ export function ProjectsView({
       </div>
 
       <div className="relative">
-        {/* Overlay background when processing */}
-        {showProcessingModal && (
-          <div className="absolute inset-0 bg-blue-50/20 dark:bg-blue-950/50 backdrop-blur-xs z-40 rounded-md" />
-        )}
-
-        <div
-          className={
-            showProcessingModal
-              ? "opacity-50 pointer-events-none transition-opacity"
-              : ""
-          }
-        >
-          <ProjectTable
-            projects={filteredProjects}
-            onRunAnalysis={onRunAnalysis}
-            onBatchRun={onBatchRun}
-            onImport={onImport}
-            onProjectClick={onProjectClick}
-          />
-        </div>
-
-        {showProcessingModal && (
-          <div className="absolute inset-0 flex items-center justify-center z-50 pointer-events-none">
-            <div className="pointer-events-auto w-full max-w-6xl mx-16">
-              <ProcessingModal />
-            </div>
-          </div>
-        )}
+        <ProjectTable
+          projects={filteredProjects}
+          onRunAnalysis={onRunAnalysis}
+          onBatchRun={onBatchRun}
+          onImport={onImport}
+          onProjectClick={onProjectClick}
+        />
       </div>
     </div>
   );
