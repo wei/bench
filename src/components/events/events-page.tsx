@@ -4,6 +4,7 @@ import { Calendar, ImageOff, MapPin, Search } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { ImportEventsButton } from "@/components/events/import-events-button";
 import { MonthRangePicker } from "@/components/month-range-picker";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardTitle } from "@/components/ui/card";
@@ -143,13 +144,19 @@ export function EventsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Hackathon Events
-        </h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Manage and review hackathon projects
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Hackathon Events
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Manage and review hackathon projects
+          </p>
+        </div>
+
+        <div className="shrink-0">
+          <ImportEventsButton />
+        </div>
       </div>
 
       <div className="flex gap-4">
