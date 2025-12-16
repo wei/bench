@@ -69,7 +69,7 @@ const complexityOptions = [
   { label: "Advanced", value: "advanced" },
 ];
 
-export function ProjectTableNew({
+export function ProjectTable({
   projects,
   onRunAnalysis,
   onBatchRun,

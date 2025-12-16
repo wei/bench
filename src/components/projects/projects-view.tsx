@@ -2,7 +2,7 @@
 
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { useEffect } from "react";
-import { ProjectTableNew } from "@/components/projects/project-table-new";
+import { ProjectTable } from "@/components/projects/project-table";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
 import { createClient } from "@/lib/supabase/client";
@@ -109,7 +109,7 @@ export function ProjectsView({
         </div>
       </div>
 
-      <ProjectTableNew
+      <ProjectTable
         projects={filteredProjects}
         onRunAnalysis={onRunAnalysis}
         onBatchRun={onBatchRun}
