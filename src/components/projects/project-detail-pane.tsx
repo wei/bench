@@ -37,6 +37,7 @@ import {
   getStatusTooltipMessage,
   parsePrizeResults,
 } from "@/lib/project-utils";
+import type { PrizeReviewResult } from "@/lib/review/prize-results";
 import type { Project } from "@/lib/store";
 
 interface ProjectDetailPaneProps {
@@ -299,12 +300,7 @@ export function ProjectDetailPane({
                     const displayName =
                       prizeCategoryMap[trackSlug] || trackSlug;
 
-                    let status:
-                      | "valid"
-                      | "invalid"
-                      | "pending"
-                      | "processing"
-                      | "errored" = "pending";
+                    let status: PrizeReviewResult["status"] = "pending";
                     let color =
                       "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
                     let reason = "Assessment pending";

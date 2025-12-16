@@ -16,6 +16,21 @@ const prizeReviewSchema = z.object({
   message: z.string(),
 });
 
+async function persistPrizeError(
+  context: ReviewContext,
+  prizeSlug: string,
+  message: string,
+) {
+  const recorded = await persistPrizeResult(context, prizeSlug, {
+    status: "errored",
+    message,
+  });
+  if (!recorded) {
+    console.error(`Failed to persist errored state for prize ${prizeSlug}`);
+  }
+  return recorded;
+}
+
 function buildUserPrompt({
   prizeSlug,
   project,
@@ -67,10 +82,9 @@ export async function prizeCategoryReviewAgent(
   },
 ) {
   if (!context.repoInfo?.repoContent) {
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "invalid:github_inaccessible",
+    await persistPrizeError(
+      context,
+      prizeSlug,
       "Missing repository content for prize review.",
     );
     return { ok: false as const };
@@ -84,12 +98,10 @@ export async function prizeCategoryReviewAgent(
 
   if (error) {
     console.error("Failed to fetch prize category", { prizeSlug, error });
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "errored",
-      `Failed to fetch prize category ${prizeSlug}`,
-    );
+    const message = `Failed to fetch prize category ${prizeSlug}: ${
+      error.message ?? "unknown error"
+    }`;
+    await persistPrizeError(context, prizeSlug, message);
     return { ok: false as const };
   }
 
@@ -174,12 +186,10 @@ export async function prizeCategoryReviewAgent(
     return { ok: true as const, data };
   } catch (error) {
     console.error(`Prize review agent failed for ${prizeSlug}`, error);
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "errored",
-      `Prize review agent failed for ${prizeSlug}`,
-    );
+    const message = `Prize review agent failed for ${prizeSlug}: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    await persistPrizeError(context, prizeSlug, message);
     return { ok: false as const };
   }
 }

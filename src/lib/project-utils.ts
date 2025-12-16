@@ -1,3 +1,4 @@
+import type { PrizeReviewResult } from "@/lib/review/prize-results";
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 
 // Get team_members from csv_row
@@ -91,13 +92,9 @@ export function getMetrics(project: Project): {
 }
 
 // Parse prize_results
-export function parsePrizeResults(prizeResults: unknown): Record<
-  string,
-  {
-    status: "valid" | "invalid" | "processing" | "errored" | "pending";
-    message: string;
-  }
-> | null {
+export function parsePrizeResults(
+  prizeResults: unknown,
+): Record<string, PrizeReviewResult> | null {
   if (
     !prizeResults ||
     typeof prizeResults !== "object" ||
@@ -105,13 +102,7 @@ export function parsePrizeResults(prizeResults: unknown): Record<
   ) {
     return null;
   }
-  return prizeResults as Record<
-    string,
-    {
-      status: "valid" | "invalid" | "processing" | "errored" | "pending";
-      message: string;
-    }
-  >;
+  return prizeResults as Record<string, PrizeReviewResult>;
 }
 
 // Get prize_tracks from standardized_opt_in_prizes or csv_row

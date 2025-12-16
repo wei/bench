@@ -29,6 +29,7 @@ import {
   getStatusTooltipMessage,
   parsePrizeResults,
 } from "@/lib/project-utils";
+import type { PrizeReviewResult } from "@/lib/review/prize-results";
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 import { useStore } from "@/lib/store";
 import { toTitleCase } from "@/lib/utils/string-utils";
@@ -328,12 +329,7 @@ export function ProjectTable({
                     const result = results[trackSlug];
                     const displayName = getPrizeDisplayName(trackSlug);
 
-                    let status:
-                      | "valid"
-                      | "invalid"
-                      | "pending"
-                      | "errored"
-                      | "processing" = "pending";
+                    let status: PrizeReviewResult["status"] = "pending";
                     let color =
                       "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
                     let message = "Pending";

@@ -1,13 +1,15 @@
 import type { Database } from "@/database.types";
+import {
+  createPendingPrizeResults,
+  type PrizeReviewResult,
+} from "@/lib/review/prize-results";
 import type { SupabaseClient } from "@/lib/review/types";
 import { createClient as createSupabaseClient } from "@/lib/supabase/server";
-
-type PrizeResult = { status: string; message: string };
 
 export async function markProcessing(
   supabase: SupabaseClient,
   projectId: string,
-): Promise<{ ok: boolean; prizeResults: Record<string, PrizeResult> }> {
+): Promise<{ ok: boolean; prizeResults: Record<string, PrizeReviewResult> }> {
   const { data: projectRow, error: fetchError } = await supabase
     .from("projects")
     .select("standardized_opt_in_prizes, prize_results")
@@ -23,14 +25,7 @@ export async function markProcessing(
   }
 
   const prizeSlugs = projectRow.standardized_opt_in_prizes ?? [];
-  const pendingPrizeResults: Record<string, PrizeResult> = {};
-
-  for (const prizeSlug of prizeSlugs) {
-    pendingPrizeResults[prizeSlug] = {
-      status: "pending",
-      message: "Pending review.",
-    };
-  }
+  const pendingPrizeResults = createPendingPrizeResults(prizeSlugs);
 
   const startedAt = new Date().toISOString();
   const { error } = await supabase
