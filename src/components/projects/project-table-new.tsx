@@ -317,85 +317,43 @@ export function ProjectTableNew({
       },
       {
         id: "prize_tracks",
-        accessorFn: (row) => getPrizeTracks(row).join(", "),
         header: "Prize Tracks",
-        cell: ({ row }) => {
-          const prizeTracks = getPrizeTracks(row.original);
-          return (
-            <div className="flex flex-wrap gap-1 max-w-[140px]">
-              {prizeTracks.length > 0 ? (
-                prizeTracks.map((trackSlug) => {
-                  const displayName = getPrizeDisplayName(trackSlug);
-                  return (
-                    <Badge
-                      key={trackSlug}
-                      variant="outline"
-                      className="text-xs"
-                    >
-                      {displayName}
-                    </Badge>
-                  );
-                })
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  None selected
-                </span>
-              )}
-            </div>
-          );
-        },
-        enableSorting: false,
-        size: 140,
-      },
-      {
-        id: "prize_results",
-        header: "Prize Results",
         cell: ({ row }) => {
           const project = row.original;
           const prizeTracks = getPrizeTracks(project);
           const results = parsePrizeResults(project.prize_results) || {};
-          const isProcessing = project.status.startsWith("processing");
 
           return (
-            <div className="flex flex-wrap gap-1 max-w-[140px]">
+            <div className="flex flex-wrap gap-1 max-w-[200px]">
               <TooltipProvider>
                 {prizeTracks.length > 0 ? (
                   prizeTracks.map((trackSlug) => {
                     const result = results[trackSlug];
                     const displayName = getPrizeDisplayName(trackSlug);
 
-                    let status:
-                      | "valid"
-                      | "invalid"
-                      | "pending"
-                      | "processing"
-                      | "error" = "pending";
+                    let status: "valid" | "invalid" | "pending" | "error" =
+                      "pending";
                     let color =
                       "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
-                    let reason = "Assessment pending";
+                    let message = "Assessment pending";
 
                     if (result) {
                       if (result.status === "valid") {
                         status = "valid";
                         color =
                           "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
-                        reason = result.message || "Criteria met";
+                        message = result.message || "Criteria met";
                       } else if (result.status === "invalid") {
                         status = "invalid";
                         color =
                           "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
-                        reason = result.message || "Criteria not met";
+                        message = result.message || "Criteria not met";
                       } else if ((result as any).status === "error") {
                         status = "error";
                         color =
                           "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
-                        reason = result.message || "Error during assessment";
+                        message = result.message || "Error during assessment";
                       }
-                    } else if (isProcessing) {
-                      status = "processing";
-                      color =
-                        "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 animate-pulse";
-                      reason = "Assessment in progress...";
                     }
 
                     return (
@@ -410,22 +368,27 @@ export function ProjectTableNew({
                             {status === "invalid" && " ?"}
                           </Badge>
                         </TooltipTrigger>
-                        <TooltipContent className="max-w-125 text-wrap wrap-break-word">
+                        <TooltipContent
+                          side="bottom"
+                          className="max-w-125 text-wrap wrap-break-word"
+                        >
                           <p className="font-semibold mb-1">{displayName}</p>
-                          <p>{reason}</p>
+                          <p>{message}</p>
                         </TooltipContent>
                       </Tooltip>
                     );
                   })
                 ) : (
-                  <span className="text-xs text-muted-foreground">-</span>
+                  <span className="text-xs text-muted-foreground">
+                    None selected
+                  </span>
                 )}
               </TooltipProvider>
             </div>
           );
         },
         enableSorting: false,
-        size: 160,
+        size: 200,
       },
       {
         id: "tech_stack",
@@ -512,7 +475,6 @@ export function ProjectTableNew({
   const { table } = useDataTable({
     data: filteredData,
     columns,
-    pageCount: 1,
     initialState: {
       sorting: [{ id: "project_title", desc: false }],
       columnPinning: { left: ["select", "favorite"], right: ["actions"] },
