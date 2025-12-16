@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
+import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,13 +32,13 @@ import { getPrizeCategories } from "@/lib/data-service";
 import {
   getCodeReview,
   getMetrics,
+  getPrizeStatusDisplay,
   getPrizeTracks,
   getStatusCircleColor,
   getStatusLabel,
   getStatusTooltipMessage,
   parsePrizeResults,
 } from "@/lib/project-utils";
-import type { PrizeReviewResult } from "@/lib/review/prize-results";
 import type { Project } from "@/lib/store";
 
 interface ProjectDetailPaneProps {
@@ -272,8 +273,6 @@ export function ProjectDetailPane({
             const hasPrizeResults =
               prizeResults && Object.keys(prizeResults).length > 0;
             const showPrizeTracks = hasPrizeTracks || hasPrizeResults;
-            const isProcessing = project.status.startsWith("processing");
-
             if (!showPrizeTracks) return null;
 
             // If we have results but no tracks, show results from prizeResults keys
@@ -299,35 +298,7 @@ export function ProjectDetailPane({
                       : null;
                     const displayName =
                       prizeCategoryMap[trackSlug] || trackSlug;
-
-                    let status: PrizeReviewResult["status"] = "pending";
-                    let color =
-                      "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
-                    let reason = "Assessment pending";
-
-                    if (result) {
-                      if (result.status === "valid") {
-                        status = "valid";
-                        color =
-                          "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
-                        reason = result.message || "Criteria met";
-                      } else if (result.status === "invalid") {
-                        status = "invalid";
-                        color =
-                          "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
-                        reason = result.message || "Criteria not met";
-                      } else if (result.status === "errored") {
-                        status = "errored";
-                        color =
-                          "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
-                        reason = result.message || "Error during assessment";
-                      }
-                    } else if (isProcessing) {
-                      status = "processing";
-                      color =
-                        "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 animate-pulse";
-                      reason = "Assessment in progress...";
-                    }
+                    const { status, message } = getPrizeStatusDisplay(result);
 
                     return (
                       <div
@@ -338,15 +309,18 @@ export function ProjectDetailPane({
                           <h4 className="font-medium text-sm text-(--mlh-dark-grey) dark:text-white">
                             {displayName}
                           </h4>
-                          <Badge
-                            variant="outline"
-                            className={`border-0 ${color}`}
+                          <StatusBadge
+                            kind="prize"
+                            status={status}
+                            tooltipTitle={displayName}
+                            tooltip={message}
+                            className="text-[11px]"
                           >
                             {status.toUpperCase()}
-                          </Badge>
+                          </StatusBadge>
                         </div>
                         <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                          {reason}
+                          {message}
                         </p>
                       </div>
                     );

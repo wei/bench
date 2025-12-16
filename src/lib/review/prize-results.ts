@@ -2,14 +2,14 @@ import { setProjectStatus } from "@/lib/review/status";
 import type { ReviewContext } from "@/lib/review/types";
 
 export type PrizeReviewResult = {
-  status: "valid" | "invalid" | "processing" | "errored" | "pending";
+  status: "valid" | "invalid" | "processing" | "errored" | "unprocessed";
   message: string;
 };
 
 export function createPendingPrizeResults(prizeSlugs: string[]) {
   return prizeSlugs.reduce<Record<string, PrizeReviewResult>>(
     (acc, prizeSlug) => {
-      acc[prizeSlug] = { status: "pending", message: "Pending review." };
+      acc[prizeSlug] = { status: "unprocessed", message: "Pending review." };
       return acc;
     },
     {},

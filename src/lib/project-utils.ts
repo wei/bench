@@ -105,6 +105,29 @@ export function parsePrizeResults(
   return prizeResults as Record<string, PrizeReviewResult>;
 }
 
+export function getPrizeStatusDisplay(
+  result: PrizeReviewResult | null | undefined,
+): { status: PrizeReviewResult["status"]; message: string } {
+  let status: PrizeReviewResult["status"] = "unprocessed";
+  let message = "Pending review.";
+
+  if (result?.status === "valid") {
+    status = "valid";
+    message = result?.message;
+  } else if (result?.status === "invalid") {
+    status = "invalid";
+    message = result?.message;
+  } else if (result?.status === "processing") {
+    status = "processing";
+    message = result?.message;
+  } else if (result?.status === "errored") {
+    status = "errored";
+    message = result?.message;
+  }
+
+  return { status, message };
+}
+
 // Get prize_tracks from standardized_opt_in_prizes or csv_row
 export function getPrizeTracks(project: Project): string[] {
   if (project.standardized_opt_in_prizes?.length > 0) {

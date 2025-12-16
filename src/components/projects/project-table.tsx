@@ -1,7 +1,7 @@
 "use client";
 
 import type { Column, ColumnDef } from "@tanstack/react-table";
-import { Info, Play, Star } from "lucide-react";
+import { Play, Star } from "lucide-react";
 import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
 import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
@@ -9,6 +9,7 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { DataTableToolbar } from "@/components/data-table/data-table-toolbar";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
+import { StatusBadge } from "@/components/status/status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,13 +24,11 @@ import { useDataTable } from "@/hooks/use-data-table";
 import { getPrizeCategories } from "@/lib/data-service";
 import {
   getComplexityColor,
+  getPrizeStatusDisplay,
   getPrizeTracks,
-  getStatusBadgeColor,
-  getStatusLabel,
   getStatusTooltipMessage,
   parsePrizeResults,
 } from "@/lib/project-utils";
-import type { PrizeReviewResult } from "@/lib/review/prize-results";
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 import { useStore } from "@/lib/store";
 import { toTitleCase } from "@/lib/utils/string-utils";
@@ -202,28 +201,12 @@ export function ProjectTable({
         ),
         cell: ({ cell, row }) => {
           const status = cell.getValue<ProjectProcessingStatus>();
-          const hasErrorOrInvalid =
-            status === "errored" || status.startsWith("invalid");
           return (
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Badge
-                    variant="outline"
-                    className={`cursor-help border-0 flex items-center gap-1 ${getStatusBadgeColor(
-                      status,
-                    )}`}
-                  >
-                    {hasErrorOrInvalid && <Info className="w-3 h-3 shrink-0" />}
-                    {getStatusLabel(status)}
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="font-semibold">{getStatusLabel(status)}</p>
-                  <p>{getStatusTooltipMessage(row.original)}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <StatusBadge
+              kind="project"
+              status={status}
+              tooltip={getStatusTooltipMessage(row.original)}
+            />
           );
         },
         meta: {
@@ -323,69 +306,32 @@ export function ProjectTable({
 
           return (
             <div className="flex flex-wrap gap-1 max-w-50">
-              <TooltipProvider>
-                {prizeTracks.length > 0 ? (
-                  prizeTracks.map((trackSlug) => {
-                    const result = results[trackSlug];
-                    const displayName = getPrizeDisplayName(trackSlug);
+              {prizeTracks.length > 0 ? (
+                prizeTracks.map((trackSlug) => {
+                  const result = results[trackSlug];
+                  const displayName = getPrizeDisplayName(trackSlug);
+                  const { status, message } = getPrizeStatusDisplay(result);
 
-                    let status: PrizeReviewResult["status"] = "pending";
-                    let color =
-                      "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
-                    let message = "Pending";
-
-                    if (result) {
-                      if (result.status === "valid") {
-                        status = "valid";
-                        color =
-                          "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
-                        message = result.message || "Criteria met";
-                      } else if (result.status === "invalid") {
-                        status = "invalid";
-                        color =
-                          "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
-                        message = result.message || "Criteria not met";
-                      } else if (result.status === "processing") {
-                        status = "processing";
-                        color =
-                          "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 animate-pulse";
-                        message = result.message || "Analyzing...";
-                      } else if (result.status === "errored") {
-                        status = "errored";
-                        color =
-                          "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
-                        message = result.message || "Error during assessment";
-                      }
-                    }
-
-                    return (
-                      <Tooltip key={trackSlug}>
-                        <TooltipTrigger asChild>
-                          <Badge
-                            variant="outline"
-                            className={`text-xs border-0 cursor-help ${color}`}
-                          >
-                            {displayName}
-                            {status === "valid" && " ✓"}
-                            {status === "invalid" && " ?"}
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent
-                          side="bottom"
-                          className="max-w-125 text-wrap wrap-break-word"
-                        >
-                          <p className="font-semibold mb-1">{displayName}</p>
-                          <p>{message}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    );
-                  })
-                ) : (
-                  <span className="text-xs text-muted-foreground">
-                    None selected
-                  </span>
-                )}
-              </TooltipProvider>
+                  return (
+                    <StatusBadge
+                      key={trackSlug}
+                      kind="prize"
+                      status={status}
+                      tooltipTitle={displayName}
+                      tooltip={message}
+                      className="text-xs"
+                    >
+                      {displayName}
+                      {status === "valid" && " ✓"}
+                      {status === "invalid" && " ?"}
+                    </StatusBadge>
+                  );
+                })
+              ) : (
+                <span className="text-xs text-muted-foreground">
+                  None selected
+                </span>
+              )}
             </div>
           );
         },
