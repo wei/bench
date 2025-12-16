@@ -321,18 +321,22 @@ export function ProjectTable({
           const results = parsePrizeResults(project.prize_results) || {};
 
           return (
-            <div className="flex flex-wrap gap-1 max-w-[200px]">
+            <div className="flex flex-wrap gap-1 max-w-50">
               <TooltipProvider>
                 {prizeTracks.length > 0 ? (
                   prizeTracks.map((trackSlug) => {
                     const result = results[trackSlug];
                     const displayName = getPrizeDisplayName(trackSlug);
 
-                    let status: "valid" | "invalid" | "pending" | "error" =
-                      "pending";
+                    let status:
+                      | "valid"
+                      | "invalid"
+                      | "pending"
+                      | "errored"
+                      | "processing" = "pending";
                     let color =
                       "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
-                    let message = "Assessment pending";
+                    let message = "Pending";
 
                     if (result) {
                       if (result.status === "valid") {
@@ -345,8 +349,13 @@ export function ProjectTable({
                         color =
                           "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
                         message = result.message || "Criteria not met";
-                      } else if (result.status === "error") {
-                        status = "error";
+                      } else if (result.status === "processing") {
+                        status = "processing";
+                        color =
+                          "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 animate-pulse";
+                        message = result.message || "Analyzing...";
+                      } else if (result.status === "errored") {
+                        status = "errored";
                         color =
                           "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
                         message = result.message || "Error during assessment";

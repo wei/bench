@@ -94,7 +94,7 @@ export function getMetrics(project: Project): {
 export function parsePrizeResults(prizeResults: unknown): Record<
   string,
   {
-    status: "valid" | "invalid";
+    status: "valid" | "invalid" | "processing" | "errored" | "pending";
     message: string;
   }
 > | null {
@@ -107,7 +107,10 @@ export function parsePrizeResults(prizeResults: unknown): Record<
   }
   return prizeResults as Record<
     string,
-    { status: "valid" | "invalid"; message: string }
+    {
+      status: "valid" | "invalid" | "processing" | "errored" | "pending";
+      message: string;
+    }
   >;
 }
 

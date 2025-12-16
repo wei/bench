@@ -10,41 +10,10 @@ export async function markPrizeProcessing(
   context: ReviewContext,
   prizeSlug: string,
 ) {
-  const existing =
-    (context.project.prize_results as Record<
-      string,
-      PrizeReviewResult
-    > | null) ?? {};
-
-  const updatedPrizeResults = {
-    ...existing,
-    [prizeSlug]: {
-      status: "processing",
-      message: `Reviewing prize: ${prizeSlug}`,
-    },
-  };
-
-  const { error } = await context.supabase
-    .from("projects")
-    .update({ prize_results: updatedPrizeResults })
-    .eq("id", context.project.id);
-
-  if (error) {
-    console.error("Failed to set prize processing status", {
-      prizeSlug,
-      error,
-    });
-    await setProjectStatus(
-      context.supabase,
-      context.project.id,
-      "errored",
-      `Failed to set processing status for prize ${prizeSlug}`,
-    );
-    return false;
-  }
-
-  context.project.prize_results = updatedPrizeResults;
-  return true;
+  return persistPrizeResult(context, prizeSlug, {
+    status: "processing",
+    message: `Reviewing prize: ${prizeSlug}`,
+  });
 }
 
 export async function persistPrizeResult(

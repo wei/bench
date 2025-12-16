@@ -40,6 +40,10 @@ export function useDashboardData(activeEventId: string | null) {
     queryKey: ["projects", activeEventId],
     queryFn: () => getProjects(activeEventId || undefined),
     enabled: true, // Always fetch projects, filter by event if needed
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   // --- Synchronization Effects ---

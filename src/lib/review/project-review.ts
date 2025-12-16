@@ -21,7 +21,9 @@ export async function startProjectReview(project: ProjectWithEvent) {
   if (!processingMarked) return;
 
   console.debug(
-    `Starting review for project ID ${project.id}, checking GitHub repo ${project.github_url ?? "N/A"}.`,
+    `Starting review for project ID ${project.id}, checking GitHub repo ${
+      project.github_url ?? "N/A"
+    }.`,
   );
   const context: ReviewContext = { supabase, github, project };
 
@@ -69,10 +71,7 @@ export async function startProjectReview(project: ProjectWithEvent) {
       `Processing prize: ${prizeSlug}`,
     );
 
-    const { ok: prizeOk } = await prizeCategoryReviewAgent(context, prizeSlug);
-    if (!prizeOk) {
-      return;
-    }
+    await prizeCategoryReviewAgent(context, prizeSlug);
   }
 
   console.debug(

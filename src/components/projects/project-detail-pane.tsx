@@ -167,7 +167,9 @@ export function ProjectDetailPane({
               <div
                 className={`absolute top-3 right-3 w-2 h-2 rounded-full ${getStatusCircleColor(
                   project.status,
-                )} ${project.status.startsWith("processing") ? "animate-pulse" : ""}`}
+                )} ${
+                  project.status.startsWith("processing") ? "animate-pulse" : ""
+                }`}
               />
             </div>
 
@@ -302,7 +304,7 @@ export function ProjectDetailPane({
                       | "invalid"
                       | "pending"
                       | "processing"
-                      | "error" = "pending";
+                      | "errored" = "pending";
                     let color =
                       "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300"; // pending (white/gray)
                     let reason = "Assessment pending";
@@ -318,8 +320,8 @@ export function ProjectDetailPane({
                         color =
                           "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300";
                         reason = result.message || "Criteria not met";
-                      } else if (result.status === "error") {
-                        status = "error";
+                      } else if (result.status === "errored") {
+                        status = "errored";
                         color =
                           "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
                         reason = result.message || "Error during assessment";
