@@ -22,10 +22,14 @@ export const hackingTimelineAgent: ReviewAgent<CommitDates> = async (
   );
   const commitDates = await fetchCommitDates(context.github, context.repoInfo);
   if (!commitDates.ok) {
+    const status = commitDates.message.includes("Unexpected error")
+      ? "errored"
+      : "invalid:github_inaccessible";
+
     await setProjectStatus(
       context.supabase,
       context.project.id,
-      "invalid:github_inaccessible",
+      status,
       commitDates.message,
     );
     return { ok: false };

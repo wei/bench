@@ -26,10 +26,15 @@ export const validateGithubRepoAgent: ReviewAgent<GithubRepoInfo> = async (
   );
   const repoCheck = await isRepoAccessible(context.github, repoInfo);
   if (!repoCheck.ok) {
+    const status =
+      repoCheck.message === "GitHub repository not found or is not public."
+        ? "invalid:github_inaccessible"
+        : "errored";
+
     await setProjectStatus(
       context.supabase,
       context.project.id,
-      "invalid:github_inaccessible",
+      status,
       repoCheck.message,
     );
     return { ok: false };
