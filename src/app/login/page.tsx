@@ -71,7 +71,7 @@ export default async function LoginPage(props: LoginPageProps) {
           </div>
 
           <div className="flex flex-1 items-center">
-            <div className="w-full max-w-md space-y-8">
+            <div className="w-full max-w-md space-y-8 mx-auto text-center">
               <div className="space-y-2">
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
                   Sign in to Bench
@@ -82,15 +82,19 @@ export default async function LoginPage(props: LoginPageProps) {
               </div>
 
               {errorMessage && (
-                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-900">
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-900 text-left">
                   {errorMessage}
                 </div>
               )}
 
-              <form action="/api/auth/login" method="get" className="space-y-4">
+              <form
+                action="/api/auth/login"
+                method="get"
+                className="flex flex-col items-center space-y-4"
+              >
                 <Button
                   type="submit"
-                  className="h-11 w-full bg-(--mlh-blue) text-base font-semibold text-white transition hover:bg-(--mlh-blue)/85"
+                  className="h-11 w-full max-w-xs bg-(--mlh-blue) text-base font-semibold text-white transition hover:bg-(--mlh-blue)/85"
                 >
                   Continue with MyMLH
                 </Button>
