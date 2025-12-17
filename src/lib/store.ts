@@ -34,6 +34,7 @@ interface AppState {
   setPrizeCategories: (categories: PrizeCategory[]) => void;
   setSelectedEventId: (id: string | null) => void;
   updateProject: (id: string, updates: Partial<Project>) => void;
+  updateEvent: (id: string, updates: Partial<Event>) => void;
   addProjects: (projects: Project[]) => void;
   setProcessingProjects: (ids: string[]) => void;
   setShowProcessingModal: (open: boolean) => void;
@@ -88,6 +89,10 @@ export const useStore = create<AppState>((set) => ({
       projects: state.projects.map((p) =>
         p.id === id ? { ...p, ...updates } : p,
       ),
+    })),
+  updateEvent: (id, updates) =>
+    set((state) => ({
+      events: state.events.map((e) => (e.id === id ? { ...e, ...updates } : e)),
     })),
   addProjects: (newProjects) =>
     set((state) => ({

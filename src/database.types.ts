@@ -22,6 +22,7 @@ export type Database = {
           event_format: string | null
           event_staff_emails: string | null
           id: string
+          judging_end_time: string | null
           logo_url: string | null
           name: string
           program: string | null
@@ -40,6 +41,7 @@ export type Database = {
           event_format?: string | null
           event_staff_emails?: string | null
           id?: string
+          judging_end_time?: string | null
           logo_url?: string | null
           name: string
           program?: string | null
@@ -58,6 +60,7 @@ export type Database = {
           event_format?: string | null
           event_staff_emails?: string | null
           id?: string
+          judging_end_time?: string | null
           logo_url?: string | null
           name?: string
           program?: string | null

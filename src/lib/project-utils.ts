@@ -155,16 +155,30 @@ export function getStatusTooltipMessage(project: Project): string {
   return "";
 }
 
-// Get complexity color
+// Get complexity color (matching status badge style)
 export function getComplexityColor(complexity: string | null): string {
   switch (complexity) {
     case "beginner":
-      return "bg-yellow-500 text-white";
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
     case "intermediate":
-      return "bg-blue-500 text-white";
+      return "bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300";
     case "advanced":
-      return "bg-red-500 text-white";
+      return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
     default:
-      return "bg-gray-300 text-gray-700";
+      return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+  }
+}
+
+// Get description accuracy color (matching status badge style)
+export function getDescriptionAccuracyColor(accuracy: string | null): string {
+  switch (accuracy) {
+    case "low":
+      return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300";
+    case "medium":
+      return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300";
+    case "high":
+      return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300";
+    default:
+      return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
   }
 }

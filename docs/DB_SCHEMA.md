@@ -73,6 +73,7 @@ create table events (
   logo_url text,
   background_url text,
   event_staff_emails text,
+  judging_end_time timestamptz,
 
   constraint events_slug_unique unique (slug),
   constraint events_start_before_end check (starts_at is null or ends_at is null or starts_at < ends_at)

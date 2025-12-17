@@ -1,7 +1,16 @@
 "use client";
 
 import type { Column, ColumnDef } from "@tanstack/react-table";
-import { Play, Star } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  ChevronUp,
+  Loader2,
+  Minus,
+  Octagon,
+  Play,
+  Star,
+} from "lucide-react";
 import {
   parseAsArrayOf,
   parseAsString,
@@ -16,9 +25,10 @@ import { DevpostIcon } from "@/components/icons/devpost-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { ProcessingModal } from "@/components/processing-modal";
 import { StatusBadge } from "@/components/status/status-badge";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
@@ -28,7 +38,6 @@ import {
 import { useDataTable } from "@/hooks/use-data-table";
 import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
-  getComplexityColor,
   getPrizeStatusDisplay,
   getPrizeTracks,
   getStatusTooltipMessage,
@@ -37,6 +46,151 @@ import {
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 import { useStore } from "@/lib/store";
 import { toTitleCase } from "@/lib/utils/string-utils";
+
+// Shared debounce timers ref (module-level to persist across renders)
+const debounceTimersRef = new Map<
+  string,
+  { timer: NodeJS.Timeout; type: "rating" | "notes" }
+>();
+
+// Component for judging score cell with debounced save
+function JudgingScoreCell({ project }: { readonly project: Project }) {
+  const { updateProject } = useStore();
+  const [localValue, setLocalValue] = React.useState(
+    project.judging_rating ?? "",
+  );
+
+  React.useEffect(() => {
+    setLocalValue(project.judging_rating ?? "");
+  }, [project.judging_rating]);
+
+  const updateProjectRef = React.useRef(updateProject);
+  React.useEffect(() => {
+    updateProjectRef.current = updateProject;
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    setLocalValue(inputValue);
+
+    // Clear existing timer
+    const existing = debounceTimersRef.get(project.id);
+    if (existing?.type === "rating") {
+      clearTimeout(existing.timer);
+    }
+
+    // Calculate the numeric value
+    const numValue =
+      inputValue === ""
+        ? null
+        : Math.max(
+            0,
+            Math.min(10, Math.floor(Number.parseFloat(inputValue) || 0)),
+          );
+
+    // Set debounced save to database (and update store)
+    const timer = setTimeout(async () => {
+      try {
+        // Update store
+        updateProjectRef.current(project.id, { judging_rating: numValue });
+
+        // Save to database
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        await supabase
+          .from("projects")
+          .update({ judging_rating: numValue })
+          .eq("id", project.id);
+      } catch (error) {
+        console.error("Failed to save judging rating:", error);
+      }
+      debounceTimersRef.delete(project.id);
+    }, 5000);
+
+    debounceTimersRef.set(project.id, { timer, type: "rating" });
+  };
+
+  return (
+    <Input
+      type="number"
+      value={localValue}
+      onChange={handleChange}
+      className="h-8 w-20 text-sm"
+      placeholder="—"
+      min={0}
+      max={10}
+      step={1}
+    />
+  );
+}
+
+// Component for notes cell with debounced save
+function NotesCell({ project }: { readonly project: Project }) {
+  const { updateProject } = useStore();
+  const [localValue, setLocalValue] = React.useState(
+    project.judging_notes ?? "",
+  );
+
+  React.useEffect(() => {
+    setLocalValue(project.judging_notes ?? "");
+  }, [project.judging_notes]);
+
+  const updateProjectRef = React.useRef(updateProject);
+  React.useEffect(() => {
+    updateProjectRef.current = updateProject;
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+
+    // Clear existing timer
+    const existing = debounceTimersRef.get(project.id);
+    if (existing?.type === "notes") {
+      clearTimeout(existing.timer);
+    }
+
+    // Set debounced save to database (and update store)
+    const timer = setTimeout(async () => {
+      try {
+        // Update store
+        updateProjectRef.current(project.id, { judging_notes: newValue });
+
+        // Save to database
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        await supabase
+          .from("projects")
+          .update({ judging_notes: newValue })
+          .eq("id", project.id);
+      } catch (error) {
+        console.error("Failed to save judging notes:", error);
+      }
+      debounceTimersRef.delete(project.id);
+    }, 5000);
+
+    debounceTimersRef.set(project.id, { timer, type: "notes" });
+  };
+
+  return (
+    <Textarea
+      value={localValue}
+      onChange={handleChange}
+      className="w-full min-h-8 max-h-32 text-sm resize-none max-w-[300px]"
+      placeholder="Add notes..."
+      rows={1}
+      style={{
+        height: "auto",
+        minHeight: "2rem",
+      }}
+      onInput={(e) => {
+        const target = e.target as HTMLTextAreaElement;
+        target.style.height = "auto";
+        target.style.height = `${Math.min(target.scrollHeight, 128)}px`;
+      }}
+    />
+  );
+}
 
 interface ProjectTableProps {
   readonly projects: Project[];
@@ -285,19 +439,106 @@ export function ProjectTable({
         enableHiding: false,
       },
       {
+        id: "judging_score",
+        accessorKey: "judging_rating",
+        header: ({ column }: { column: Column<Project, unknown> }) => (
+          <DataTableColumnHeader column={column} label="Score" />
+        ),
+        cell: ({ row }) => <JudgingScoreCell project={row.original} />,
+        enableSorting: true,
+        size: 100,
+      },
+      {
         id: "status",
         accessorKey: "status",
         header: ({ column }: { column: Column<Project, unknown> }) => (
           <DataTableColumnHeader column={column} label="Status" />
         ),
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = rowA.getValue(columnId) as string;
+          const b = rowB.getValue(columnId) as string;
+          // Custom order: processed (green) -> processing (blue) -> invalid (amber) -> errored (red) -> unprocessed (gray)
+          const order: Record<string, number> = {
+            processed: 5,
+            "processing:code_review": 4,
+            "processing:prize_category_review": 4,
+            "invalid:github_inaccessible": 3,
+            "invalid:rule_violation": 3,
+            errored: 2,
+            unprocessed: 1,
+          };
+          const aVal = a.startsWith("processing:")
+            ? order["processing:code_review"]
+            : (order[a] ?? 0);
+          const bVal = b.startsWith("processing:")
+            ? order["processing:code_review"]
+            : (order[b] ?? 0);
+          const aInvalid = a.startsWith("invalid:")
+            ? order["invalid:github_inaccessible"]
+            : aVal;
+          const bInvalid = b.startsWith("invalid:")
+            ? order["invalid:github_inaccessible"]
+            : bVal;
+          return bInvalid - aInvalid; // Descending: processed -> processing -> invalid -> errored -> unprocessed
+        },
         cell: ({ cell, row }) => {
           const status = cell.getValue<ProjectProcessingStatus>();
+          const tooltipMessage =
+            status === "processed"
+              ? undefined
+              : getStatusTooltipMessage(row.original);
+
+          let icon: React.ReactNode;
+          if (status === "processed") {
+            icon = (
+              <CheckCircle2
+                className={`text-green-600 dark:text-green-400 h-5! w-5!`}
+              />
+            );
+          } else if (status.startsWith("processing:")) {
+            icon = (
+              <Loader2
+                className={`text-blue-600 dark:text-blue-400 animate-spin h-5! w-5!`}
+              />
+            );
+          } else if (status.startsWith("invalid:")) {
+            icon = (
+              <AlertTriangle
+                className={`text-amber-600 dark:text-amber-400 h-5! w-5!`}
+              />
+            );
+          } else if (status === "errored") {
+            icon = (
+              <Octagon className={`text-red-600 dark:text-red-400 h-5! w-5!`} />
+            );
+          } else {
+            // unprocessed
+            icon = (
+              <Minus className={`text-gray-500 dark:text-gray-400 h-5! w-5!`} />
+            );
+          }
+
+          const iconWrapper = (
+            <div className="flex items-center justify-center w-5 h-5">
+              {icon}
+            </div>
+          );
+
+          if (status === "processed") {
+            return iconWrapper;
+          }
+
           return (
             <StatusBadge
               kind="project"
               status={status}
-              tooltip={getStatusTooltipMessage(row.original)}
-            />
+              tooltip={tooltipMessage}
+              showInfoIcon={false}
+              noRounded
+              className="border-0 bg-transparent p-0 flex items-center justify-center"
+            >
+              {icon}
+            </StatusBadge>
           );
         },
         meta: {
@@ -388,13 +629,69 @@ export function ProjectTable({
         header: ({ column }: { column: Column<Project, unknown> }) => (
           <DataTableColumnHeader column={column} label="Complexity" />
         ),
-        cell: ({ cell }) => {
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = rowA.getValue(columnId) as string | null;
+          const b = rowB.getValue(columnId) as string | null;
+          // Custom order: advanced -> intermediate -> beginner -> invalid -> N/A
+          const order: Record<string, number> = {
+            advanced: 5,
+            intermediate: 4,
+            beginner: 3,
+            invalid: 2,
+          };
+          const aVal = a ? (order[a] ?? 1) : 1; // N/A gets 1
+          const bVal = b ? (order[b] ?? 1) : 1; // N/A gets 1
+          return bVal - aVal; // Descending: advanced -> intermediate -> beginner -> invalid -> N/A
+        },
+        cell: ({ cell, row }) => {
           const complexity = cell.getValue<string | null>();
-          return (
-            <Badge className={getComplexityColor(complexity)}>
-              {toTitleCase(complexity) || "N/A"}
-            </Badge>
-          );
+          const project = row.original;
+
+          if (!complexity) {
+            return <span className="text-xs text-muted-foreground">N/A</span>;
+          }
+
+          // Show N/A instead of "invalid" for display
+          if (complexity === "invalid") {
+            return <span className="text-xs text-muted-foreground">N/A</span>;
+          }
+
+          const text = toTitleCase(complexity);
+          const tooltipMessage =
+            project.technical_complexity_message || undefined;
+
+          if (complexity === "advanced") {
+            return (
+              <StatusBadge
+                kind="project"
+                status={complexity as ProjectProcessingStatus}
+                tooltip={tooltipMessage}
+                tooltipTitle={text}
+                noUnderline
+                className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 flex items-center gap-1"
+              >
+                <ChevronUp className="w-3 h-3" />
+                {text}
+              </StatusBadge>
+            );
+          }
+
+          if (tooltipMessage) {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs cursor-help">{text}</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-72">
+                    <p>{tooltipMessage}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
+          return <span className="text-xs">{text}</span>;
         },
         meta: {
           label: "Complexity",
@@ -402,6 +699,73 @@ export function ProjectTable({
           options: complexityOptions,
         },
         enableColumnFilter: true,
+      },
+      {
+        id: "description_accuracy",
+        accessorKey: "description_accuracy_level",
+        header: ({ column }: { column: Column<Project, unknown> }) => (
+          <DataTableColumnHeader column={column} label="Desc. Acc." />
+        ),
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = rowA.getValue(columnId) as string | null;
+          const b = rowB.getValue(columnId) as string | null;
+          // Custom order: high -> medium -> low -> N/A
+          const order: Record<string, number> = {
+            high: 4,
+            medium: 3,
+            low: 2,
+          };
+          const aVal = a ? (order[a] ?? 1) : 1; // N/A gets 1
+          const bVal = b ? (order[b] ?? 1) : 1; // N/A gets 1
+          return bVal - aVal; // Descending: high -> medium -> low -> N/A
+        },
+        cell: ({ cell, row }) => {
+          const accuracy = cell.getValue<string | null>();
+          const project = row.original;
+
+          if (!accuracy) {
+            return <span className="text-xs text-muted-foreground">N/A</span>;
+          }
+
+          const text = toTitleCase(accuracy);
+          const tooltipMessage =
+            project.description_accuracy_message || undefined;
+
+          if (accuracy === "high") {
+            return (
+              <StatusBadge
+                kind="project"
+                status={accuracy as ProjectProcessingStatus}
+                tooltip={tooltipMessage}
+                tooltipTitle={text}
+                noUnderline
+                className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 flex items-center gap-1 text-xs"
+              >
+                <ChevronUp className="w-3 h-3" />
+                {text}
+              </StatusBadge>
+            );
+          }
+
+          if (tooltipMessage) {
+            return (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="text-xs cursor-help">{text}</span>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-72">
+                    <p>{tooltipMessage}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            );
+          }
+
+          return <span className="text-xs">{text}</span>;
+        },
+        enableColumnFilter: true,
+        size: 120,
       },
       {
         id: "prize_tracks",
@@ -414,28 +778,56 @@ export function ProjectTable({
           return (
             <div className="flex flex-wrap gap-1 max-w-50">
               {prizeTracks.length > 0 ? (
-                prizeTracks.map((trackSlug) => {
-                  const result = results[trackSlug];
-                  const shortDisplayName = getPrizeDisplayName(trackSlug); // short_name or name fallback
-                  const fullName =
-                    prizeCategoryNameMap.get(trackSlug) || trackSlug; // full name for tooltip
-                  const { status, message } = getPrizeStatusDisplay(result);
+                prizeTracks
+                  .map((trackSlug) => {
+                    const result = results[trackSlug];
+                    const shortDisplayName = getPrizeDisplayName(trackSlug); // short_name or name fallback
+                    const fullName =
+                      prizeCategoryNameMap.get(trackSlug) || trackSlug; // full name for tooltip
+                    const { status, message } = getPrizeStatusDisplay(result);
 
-                  return (
-                    <StatusBadge
-                      key={trackSlug}
-                      kind="prize"
-                      status={status}
-                      tooltipTitle={fullName}
-                      tooltip={message}
-                      className="text-xs"
-                    >
-                      {shortDisplayName}
-                      {status === "valid" && " ✓"}
-                      {status === "invalid" && " ?"}
-                    </StatusBadge>
-                  );
-                })
+                    return {
+                      trackSlug,
+                      shortDisplayName,
+                      fullName,
+                      status,
+                      message,
+                    };
+                  })
+                  .sort((a, b) => {
+                    // Sort order: valid (5) -> invalid (4) -> processing (3) -> unprocessed (2) -> errored (1)
+                    const order: Record<string, number> = {
+                      valid: 5,
+                      invalid: 4,
+                      processing: 3,
+                      unprocessed: 2,
+                      errored: 1,
+                    };
+                    return (order[b.status] ?? 0) - (order[a.status] ?? 0);
+                  })
+                  .map(
+                    ({
+                      trackSlug,
+                      shortDisplayName,
+                      fullName,
+                      status,
+                      message,
+                    }) => (
+                      <StatusBadge
+                        key={trackSlug}
+                        kind="prize"
+                        status={status}
+                        tooltipTitle={fullName}
+                        tooltip={message}
+                        noUnderline
+                        className="text-xs flex items-center gap-1"
+                      >
+                        {status === "valid" && "✓ "}
+                        {status === "invalid" && "? "}
+                        {shortDisplayName}
+                      </StatusBadge>
+                    ),
+                  )
               ) : (
                 <span className="text-xs text-muted-foreground">
                   None selected
@@ -448,54 +840,12 @@ export function ProjectTable({
         size: 200,
       },
       {
-        id: "tech_stack",
-        accessorKey: "tech_stack",
-        header: "Tech Stack",
-        cell: ({ cell }) => {
-          const techStack = cell.getValue<string[]>();
-          return (
-            <div className="flex flex-wrap gap-1 max-w-45">
-              {techStack && techStack.length > 0 ? (
-                <TooltipProvider>
-                  {techStack.slice(0, 3).map((tech) => (
-                    <Badge key={tech} variant="outline" className="text-xs">
-                      {tech}
-                    </Badge>
-                  ))}
-                  {techStack.length > 3 && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge
-                          variant="outline"
-                          className="text-xs cursor-help hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                        >
-                          +{techStack.length - 3}
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <div className="flex flex-col gap-1">
-                          <p className="font-semibold text-xs mb-1">
-                            Additional Tech:
-                          </p>
-                          {techStack.slice(3).map((tech) => (
-                            <span key={tech} className="text-xs">
-                              {tech}
-                            </span>
-                          ))}
-                        </div>
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </TooltipProvider>
-              ) : (
-                <span className="text-xs text-muted-foreground">
-                  Not analyzed
-                </span>
-              )}
-            </div>
-          );
-        },
+        id: "notes",
+        accessorKey: "judging_notes",
+        header: "Notes",
+        cell: ({ row }) => <NotesCell project={row.original} />,
         enableSorting: false,
+        size: 200,
       },
       {
         id: "actions",
@@ -534,8 +884,15 @@ export function ProjectTable({
     data: filteredData,
     columns,
     initialState: {
-      sorting: [{ id: "project_title", desc: false }],
-      columnPinning: { left: ["select", "favorite"], right: ["actions"] },
+      sorting: [],
+      columnPinning: {
+        left: ["select", "favorite"],
+        right: ["actions", "notes"],
+      },
+      columnVisibility: {
+        judging_score: false,
+        notes: false,
+      },
     },
     getRowId: (row) => row.id,
   });

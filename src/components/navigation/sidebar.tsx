@@ -16,6 +16,7 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
     selectedEventId,
     recentlyViewedProjects,
     favoriteProjects,
+    toggleFavoriteProject,
   } = useStore();
   const [showRecentlyViewed, setShowRecentlyViewed] = useState(false);
 
@@ -86,17 +87,29 @@ export function Sidebar({ onProjectClick }: SidebarProps) {
           {favoriteProjectsForEvent.length > 0 ? (
             <div className="space-y-1">
               {favoriteProjectsForEvent.map((project) => (
-                <button
+                <div
                   key={project.id}
-                  type="button"
-                  onClick={() => onProjectClick(project)}
-                  className="w-full text-left px-3 py-2 pl-5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#404040] transition-colors text-sm flex items-center gap-2"
+                  className="w-full px-3 py-2 pl-5 rounded-lg hover:bg-gray-50 dark:hover:bg-[#404040] transition-colors text-sm flex items-center gap-2 group"
                 >
-                  <div className="truncate flex-1">
+                  <button
+                    type="button"
+                    onClick={() => onProjectClick(project)}
+                    className="truncate flex-1 text-left"
+                  >
                     {project.project_title || "Untitled"}
-                  </div>
-                  <Star className="w-3 h-3 fill-yellow-500 text-yellow-500 shrink-0" />
-                </button>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleFavoriteProject(project.id);
+                    }}
+                    className="shrink-0 p-1 hover:bg-red-100 dark:hover:bg-red-900/30 rounded transition-colors cursor-pointer"
+                    aria-label="Remove from favorites"
+                  >
+                    <Star className="w-3 h-3 fill-yellow-500 text-yellow-500" />
+                  </button>
+                </div>
               ))}
             </div>
           ) : (

@@ -21,6 +21,9 @@ type SharedProps = {
   readonly showInfoIcon?: boolean;
   readonly children?: React.ReactNode;
   readonly label?: string;
+  readonly noUnderline?: boolean;
+  readonly style?: React.CSSProperties;
+  readonly noRounded?: boolean;
 };
 
 type ProjectStatusBadgeProps = SharedProps & {
@@ -84,6 +87,7 @@ export function StatusBadge(props: StatusBadgeProps) {
   const tooltipBody = props.tooltip;
   const colorClass = getColorClass(props);
   const showInfo = shouldShowInfoIcon(props);
+  const hasTooltip = !!(tooltipBody || tooltipTitle);
 
   return (
     <TooltipProvider>
@@ -92,22 +96,32 @@ export function StatusBadge(props: StatusBadgeProps) {
           <Badge
             variant="outline"
             className={cn(
-              "border-0 cursor-help flex items-center gap-1",
+              "border-0 flex items-center gap-1",
+              props.noRounded && "rounded-none!",
+              hasTooltip &&
+                !props.noUnderline &&
+                "cursor-help underline decoration-dashed decoration-1 underline-offset-2",
+              hasTooltip && props.noUnderline && "cursor-help",
               colorClass,
               props.className,
             )}
+            style={props.style}
           >
             {showInfo && <Info className="w-3 h-3 shrink-0" />}
             {badgeContent}
           </Badge>
         </TooltipTrigger>
-        <TooltipContent className="max-w-72 text-wrap wrap-break-word">
-          {tooltipTitle ? (
-            <p className="font-semibold">{tooltipTitle}</p>
-          ) : null}
-          {tooltipBody ? <p>{tooltipBody}</p> : null}
-          {!tooltipTitle && !tooltipBody ? <p>{defaultLabel}</p> : null}
-        </TooltipContent>
+        {hasTooltip && (
+          <TooltipContent className="max-w-72 text-wrap wrap-break-word">
+            {tooltipTitle ? (
+              <div className="flex items-center gap-1.5">
+                <span className="font-semibold">{tooltipTitle}</span>
+              </div>
+            ) : null}
+            {tooltipBody ? <p>{tooltipBody}</p> : null}
+            {!tooltipTitle && !tooltipBody ? <p>{defaultLabel}</p> : null}
+          </TooltipContent>
+        )}
       </Tooltip>
     </TooltipProvider>
   );

@@ -66,7 +66,11 @@ export function DataTable<TData>({ table, children }: DataTableProps<TData>) {
                       key={row.id}
                       data-state={row.getIsSelected() && "selected"}
                       aria-selected={row.getIsSelected()}
-                      className={hasError ? "bg-red-50 dark:bg-red-950/20" : ""}
+                      className={
+                        hasError
+                          ? "bg-red-50 dark:bg-red-950/20 hover:bg-red-100 dark:hover:bg-red-950/30"
+                          : ""
+                      }
                     >
                       {row.getVisibleCells().map((cell) => {
                         const pinningStyles = getCommonPinningStyles(
@@ -74,7 +78,11 @@ export function DataTable<TData>({ table, children }: DataTableProps<TData>) {
                           table,
                         );
                         return (
-                          <TableCell key={cell.id} style={pinningStyles}>
+                          <TableCell
+                            key={cell.id}
+                            style={pinningStyles}
+                            className="align-middle"
+                          >
                             {flexRender(
                               cell.column.columnDef.cell,
                               cell.getContext(),
