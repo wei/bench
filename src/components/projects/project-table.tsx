@@ -300,20 +300,11 @@ export function ProjectTable({
     return loadFilterState(eventId ?? null);
   }, [eventId]);
 
-  // Check if URL has filter params - if not, we'll restore from persisted state
-  const hasUrlParams = React.useMemo(() => {
-    if (typeof globalThis.window === "undefined") return false;
-    const params = new URLSearchParams(globalThis.window.location.search);
-    return (
-      params.has("title") ||
-      params.has("status") ||
-      params.has("complexity") ||
-      params.has("prizeTrack") ||
-      params.has("techStack") ||
-      params.has("techStackMode") ||
-      params.has("hasGithub")
-    );
-  }, []);
+  // Whether we actually have any persisted filters for the current event
+  const hasPersistedState = React.useMemo(
+    () => Object.keys(persistedState ?? {}).length > 0,
+    [persistedState],
+  );
 
   const [title, setTitle] = useQueryState("title", parseAsString);
   const [isJudgingView, setIsJudgingView] = React.useState(
@@ -351,6 +342,18 @@ export function ProjectTable({
     "hasGithub",
     parseAsStringLiteral(["true", "false"] as const),
   );
+
+  // Check if URL has filter params - reactive to actual query state values
+  const hasUrlParams = React.useMemo(() => {
+    return !!(
+      title ||
+      (status && status.length > 0) ||
+      (complexity && complexity.length > 0) ||
+      prizeTrack ||
+      (techStack && techStack.length > 0) ||
+      hasGithub
+    );
+  }, [title, status, complexity, prizeTrack, techStack, hasGithub]);
 
   // Track the last eventId we restored for and if we're currently restoring
   const lastRestoredEventIdRef = React.useRef<string | null | undefined>(null);
@@ -415,7 +418,7 @@ export function ProjectTable({
       setTimeout(() => {
         isInitialMountRef.current = false;
         // If no restoration happened and no URL params, mark as initialized
-        if (!persistedState || hasUrlParams) {
+        if (!hasPersistedState || !eventId || hasUrlParams) {
           hasInitializedRef.current = true;
         }
       }, 300);
@@ -423,6 +426,7 @@ export function ProjectTable({
   }, [
     eventId,
     persistedState,
+    hasPersistedState,
     hasUrlParams,
     setTitle,
     setStatus,
