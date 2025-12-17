@@ -8,6 +8,12 @@ interface MarkdownProps {
 }
 
 const components: Components = {
+  p: ({ className, ...props }) => (
+    <p
+      className={clsx("text-sm leading-relaxed text-current", className)}
+      {...props}
+    />
+  ),
   ul: ({ className, ...props }) => (
     <ul
       className={clsx("list-disc list-outside pl-5 space-y-1", className)}

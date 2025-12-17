@@ -18,6 +18,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Markdown } from "@/components/ui/markdown";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
   getCodeReview,
@@ -181,10 +187,24 @@ export function ProjectDetailPane({
                         {project.description_accuracy_level || "N/A"}
                       </span>
                     </div>
-                    <Markdown className="text-gray-600 line-clamp-2">
-                      {project.description_accuracy_message ||
-                        "No details available"}
-                    </Markdown>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="cursor-help">
+                            <Markdown className="text-gray-600 line-clamp-2">
+                              {project.description_accuracy_message ||
+                                "No details available"}
+                            </Markdown>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="max-w-md">
+                          <Markdown className="text-gray-700">
+                            {project.description_accuracy_message ||
+                              "No details available"}
+                          </Markdown>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               </div>
