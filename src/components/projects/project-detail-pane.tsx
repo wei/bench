@@ -253,7 +253,7 @@ export function ProjectDetailPane({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        className="w-full sm:max-w-4xl p-0 flex flex-col h-full"
+        className="w-full sm:max-w-4xl p-0 flex flex-col h-full gap-0"
         onInteractOutside={(e: any) => {
           const { originalEvent } = e.detail;
           const target = originalEvent.target as HTMLElement;
@@ -265,73 +265,73 @@ export function ProjectDetailPane({
           }
         }}
       >
-        <div className="flex-1 overflow-y-auto">
-          <div className="p-8 border-b bg-white">
-            <div className="flex items-center justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => toggleFavoriteProject(project.id)}
-                    className="group p-1.5 hover:bg-gray-100 rounded-md transition-all border border-transparent hover:border-gray-200 outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
-                    aria-label={
+        <div className="p-8 border-b bg-white">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => toggleFavoriteProject(project.id)}
+                  className="group p-1.5 hover:bg-gray-100 rounded-md transition-all border border-transparent hover:border-gray-200 outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                  aria-label={
+                    favoriteProjects.includes(project.id)
+                      ? "Remove from favorites"
+                      : "Add to favorites"
+                  }
+                >
+                  <Star
+                    className={`w-6 h-6 transition-colors ${
                       favoriteProjects.includes(project.id)
-                        ? "Remove from favorites"
-                        : "Add to favorites"
-                    }
-                  >
-                    <Star
-                      className={`w-6 h-6 transition-colors ${
-                        favoriteProjects.includes(project.id)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300 group-hover:text-gray-400"
-                      }`}
-                    />
-                  </button>
-                  <SheetTitle className="text-4xl font-bold text-gray-900 font-headline wrap-break-word leading-tight">
-                    {project.project_title}
-                  </SheetTitle>
-                  <div className="flex items-center gap-2 shrink-0">
-                    {project.github_url && (
-                      <a
-                        href={project.github_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-400 hover:text-gray-900 transition-colors"
-                        title="GitHub Repository"
-                      >
-                        <GithubIcon className="w-6 h-6" />
-                      </a>
-                    )}
-                    {project.submission_url && (
-                      <a
-                        href={project.submission_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-gray-400 hover:text-[#003E54] transition-colors"
-                        title="Devpost Submission"
-                      >
-                        <DevpostIcon className="w-6 h-6" />
-                      </a>
-                    )}
-                  </div>
+                        ? "fill-yellow-400 text-yellow-400"
+                        : "text-gray-300 group-hover:text-gray-400"
+                    }`}
+                  />
+                </button>
+                <SheetTitle className="text-4xl font-bold text-gray-900 font-headline wrap-break-word leading-tight">
+                  {project.project_title}
+                </SheetTitle>
+                <div className="flex items-center gap-2 shrink-0">
+                  {project.github_url && (
+                    <a
+                      href={project.github_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-gray-900 transition-colors"
+                      title="GitHub Repository"
+                    >
+                      <GithubIcon className="w-6 h-6" />
+                    </a>
+                  )}
+                  {project.submission_url && (
+                    <a
+                      href={project.submission_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-gray-400 hover:text-[#003E54] transition-colors"
+                      title="Devpost Submission"
+                    >
+                      <DevpostIcon className="w-6 h-6" />
+                    </a>
+                  )}
                 </div>
               </div>
+            </div>
 
-              <div className="flex items-center gap-2 shrink-0">
-                <Button
-                  size="sm"
-                  onClick={onRerun}
-                  disabled={disableAnalysis}
-                  variant="outline"
-                >
-                  <Play className="h-4 w-4" />
-                  {rerunLabel}
-                </Button>
-              </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button
+                size="sm"
+                onClick={onRerun}
+                disabled={disableAnalysis}
+                variant="outline"
+              >
+                <Play className="h-4 w-4" />
+                {rerunLabel}
+              </Button>
             </div>
           </div>
+        </div>
 
+        <div className="flex-1 overflow-y-auto">
           <div className="px-8 py-6 space-y-4 bg-gray-50/50">
             {/* Code Review Agent Section */}
             {/*! Bento Box Stats */}
