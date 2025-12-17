@@ -7,6 +7,7 @@ import {
   setSession,
   toSessionData,
 } from "@/lib/auth/session";
+import { syncMlhEventsToDb } from "@/lib/mlh-core/sync-events";
 
 const buildErrorRedirect = (req: NextRequest, code: string) => {
   const url = new URL("/login", req.url);
@@ -96,6 +97,14 @@ export async function GET(req: NextRequest) {
       },
     }),
   );
+
+  // Trigger event sync in the background (fire and forget)
+  syncMlhEventsToDb({
+    daysFromNow: 30,
+    imagesOnly: true,
+  }).catch((error) => {
+    console.error("[auth/callback] Failed to sync events:", error);
+  });
 
   const redirectUrl = new URL("/events", req.url);
   return NextResponse.redirect(redirectUrl);
