@@ -55,6 +55,8 @@ function mapMlhEventToEventInsert(event: MlhEventApi): EventInsert {
       (event.registration_url as string | null | undefined) ?? null,
     logo_url: (event.logo_url as string | null | undefined) ?? null,
     background_url: (event.background_url as string | null | undefined) ?? null,
+    event_staff_emails:
+      (event.event_staff_emails as string | null | undefined) ?? null,
     starts_at: epochSecondsToIso(event.starts_at) ?? null,
     ends_at: epochSecondsToIso(event.ends_at) ?? null,
     created_at: createdAt,

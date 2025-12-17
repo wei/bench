@@ -72,6 +72,7 @@ create table events (
   registration_url text,
   logo_url text,
   background_url text,
+  event_staff_emails text,
 
   constraint events_slug_unique unique (slug),
   constraint events_start_before_end check (starts_at is null or ends_at is null or starts_at < ends_at)
@@ -161,7 +162,6 @@ Global catalog of prizes, used by Grep Agent + AI usage analysis.
 create table prize_categories (
   id uuid primary key default gen_random_uuid(),
   name text not null,
-  short_name text,
   slug text not null,
 
   -- Grep Agent required any of the words in this list; store as lowercase tokens
