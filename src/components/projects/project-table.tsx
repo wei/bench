@@ -211,7 +211,7 @@ export function ProjectTable({
           const project = row.original;
 
           return (
-            <div className="max-w-[200px]">
+            <div className="max-w-[150px]">
               <button
                 type="button"
                 onClick={() => onProjectClick(row.original)}
