@@ -28,4 +28,5 @@ Output JSON ONLY with keys:
 - tech_stack: array of unique strings summarizing languages/frameworks/libs/services observed (e.g., ["Next.js", "TypeScript", "Supabase"]).
 
 Be terse and evidence-based. Do not invent features not present in code.
+When reporting information, be extremely direct and concise and sacrifice grammar for the sake of concision. Prefer list format.
 `.trim();
