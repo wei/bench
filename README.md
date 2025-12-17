@@ -1,4 +1,4 @@
-# Bench
+<img width="1275" height="332" alt="image" src="https://github.com/user-attachments/assets/abb0e3f3-e21e-43ec-b60b-52b9cfd09839" />
 
 Bench is an AI-assisted judging and verification tool for large hackathons. It pulls events from MLH Core, ingests Devpost CSV exports into Supabase, and runs a multi-agent review over each submission to check GitHub access, hacking timeline, technical complexity, description accuracy, and prize eligibility. Judges get a real-time dashboard to search, filter, score, favorite, and deep-dive into projects.
 
@@ -20,56 +20,96 @@ Bench is an AI-assisted judging and verification tool for large hackathons. It p
 
 ```mermaid
 flowchart TB
+
  subgraph subGraph0["Next.js Application"]
+
         NextJS["Bench"]
+
   end
+
  subgraph subGraph1["Data & State"]
+
         Supabase["Supabase"]
+
         SupabaseDB["PostgreSQL"]
+
         SupabaseRealtime["Realtime"]
+
   end
+
  subgraph Authentication["Authentication"]
+
         MyMLH["MyMLH v4 OAuth2"]
+
   end
+
  subgraph subGraph3["External Integrations"]
+
         MLHCore["MLH Core <b>Public</b> API"]
+
         GitHub["GitHub API"]
+
         GitIngest["Git Ingest"]
+
   end
+
  subgraph subGraph4["AI / Inference"]
+
         OpenRouter["OpenRouter / OpenAI"]
+
         Gemini["Google Gemini"]
+
         Copilot["GitHub Copilot Chat"]
+
   end
+
     User["Coach"] -- <br> --> NextJS
+
     NextJS <-- OAuth2 / Profile Fetch --> MyMLH
+
     Supabase --> SupabaseDB
+
     OpenRouter --> Gemini
+
     NextJS -- Manage --> subGraph1
+
     NextJS -- AI Chat --> Copilot
+
     NextJS --> n1@{ label: "<span style=\"background-color:\">Prize/Category Review</span>" } & n2["Events Sync"]
+
     n1 <--> OpenRouter
+
     n1 <-- Fetch Repo Content --> GitIngest
+
     n1 <-- Fetch Repo Stats --> GitHub
+
     n2 <-- Fetch Events --> MLHCore
+
     n2 --> subGraph1
 
+
+
     n1@{ shape: rect}
+
     n2@{ shape: rect}
+
     style NextJS fill:#000,stroke:#fff,color:#fff
+
     style Supabase fill:#3ecf8e,stroke:#3ecf8e,color:#fff
+
     style SupabaseDB fill:#3ecf8e,stroke:#3ecf8e,color:#fff
+
     style MyMLH fill:#f05033,stroke:#fff,color:#fff
 ```
 
 ## Quickstart
 
-1) Install deps  
+1) Install deps
 ```bash
 pnpm install
 ```
 
-2) Configure environment (`.env.local`)  
+2) Configure environment (`.env.local`)
 ```
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=...
@@ -95,7 +135,7 @@ DO_AI_MODEL=openai-gpt-oss-120b
 DO_AI_BASE_URL=https://inference.do-ai.run/v1
 ```
 
-3) Run the app  
+3) Run the app
 ```bash
 pnpm dev
 ```
