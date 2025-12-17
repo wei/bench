@@ -456,6 +456,7 @@ export function ProjectsView({
           onImport={onImport}
           onProjectClick={onProjectClick}
           onJudgingViewChange={setIsJudgingView}
+          eventId={activeEventId}
         />
       </div>
     </div>
