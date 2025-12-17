@@ -79,7 +79,7 @@ export async function syncMlhEventsToDb(args?: {
   endsAtLte?: string;
   eventFormatEq?: string;
   eventTypeEq?: string;
-  /** Rolling window size from today (default: 30). Overrides startsAtGte/endsAtLte when provided. */
+  /** Rolling window size from start date (default: 30). When provided with startsAtGte, calculates end date. Otherwise uses today as start. */
   daysFromNow?: number;
   /** When true, only process events that have a logo_url or background_url. Default: false. */
   imagesOnly?: boolean;
@@ -92,16 +92,30 @@ export async function syncMlhEventsToDb(args?: {
       ? Math.max(0, Math.floor(daysFromNowRaw))
       : undefined;
 
-  const startsAtRolling = formatDateYYYYMMDD(new Date());
-  const endsAtRollingDate = new Date();
-  endsAtRollingDate.setDate(endsAtRollingDate.getDate() + (daysFromNow ?? 30));
-  const endsAtRolling = formatDateYYYYMMDD(endsAtRollingDate);
+  let startsAtGte: string | undefined;
+  let endsAtLte: string | undefined;
+
+  if (daysFromNow !== undefined) {
+    // Use provided startsAtGte or default to today
+    const startDate = args?.startsAtGte
+      ? new Date(args.startsAtGte)
+      : new Date();
+    startsAtGte = formatDateYYYYMMDD(startDate);
+
+    // Calculate end date from start date + daysFromNow
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + daysFromNow);
+    endsAtLte = formatDateYYYYMMDD(endDate);
+  } else {
+    // Use explicit date range parameters
+    startsAtGte = args?.startsAtGte;
+    endsAtLte = args?.endsAtLte;
+  }
 
   const mlhEventsRaw = await fetchMlhEvents({
     limit: args?.limit,
-    startsAtGte:
-      daysFromNow !== undefined ? startsAtRolling : args?.startsAtGte,
-    endsAtLte: daysFromNow !== undefined ? endsAtRolling : args?.endsAtLte,
+    startsAtGte,
+    endsAtLte,
     eventFormatEq: args?.eventFormatEq,
     eventTypeEq: args?.eventTypeEq,
   });

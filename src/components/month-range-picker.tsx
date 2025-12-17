@@ -4,11 +4,6 @@ import { CalendarIcon } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -22,7 +17,7 @@ interface MonthRangePickerProps {
 }
 
 export function MonthRangePicker({ value, onChange }: MonthRangePickerProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [_isOpen, setIsOpen] = useState(false);
   const [startMonth, setStartMonth] = useState<number | null>(null);
   const [startYear, setStartYear] = useState<number | null>(null);
   const [endMonth, setEndMonth] = useState<number | null>(null);
@@ -46,7 +41,7 @@ export function MonthRangePicker({ value, onChange }: MonthRangePickerProps) {
   const currentYear = new Date().getFullYear();
   const years = Array.from({ length: 5 }, (_, i) => currentYear - 2 + i);
 
-  const handleApply = () => {
+  const _handleApply = () => {
     if (startMonth !== null && startYear !== null) {
       const start = new Date(startYear, startMonth, 1);
       let end: Date | null = null;
@@ -68,10 +63,9 @@ export function MonthRangePicker({ value, onChange }: MonthRangePickerProps) {
     setEndMonth(null);
     setEndYear(null);
     onChange({ start: null, end: null });
-    setIsOpen(false);
   };
 
-  const formatDateRange = () => {
+  const _formatDateRange = () => {
     if (!value.start) return "Filter by date";
 
     const startStr = value.start.toLocaleDateString("en-US", {
@@ -94,120 +88,134 @@ export function MonthRangePicker({ value, onChange }: MonthRangePickerProps) {
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="outline" className="gap-2 bg-transparent">
-          <CalendarIcon className="w-4 h-4" />
-          {formatDateRange()}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-4">
-        <div className="space-y-4">
-          <div>
-            <label
-              htmlFor="start-month"
-              className="text-sm font-medium mb-2 block"
-            >
-              Start Date
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <Select
-                value={startMonth?.toString()}
-                onValueChange={(v) => setStartMonth(Number.parseInt(v, 10))}
-              >
-                <SelectTrigger id="start-month">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month, index) => (
-                    <SelectItem key={month} value={index.toString()}>
-                      {month}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+    <div className="flex items-center gap-1.5 border border-input rounded-md px-3 h-10 bg-background">
+      <CalendarIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+      <div className="flex items-center gap-1.5">
+        <Select
+          value={startMonth?.toString() ?? ""}
+          onValueChange={(v) => {
+            const month = Number.parseInt(v, 10);
+            setStartMonth(month);
+            if (startYear !== null) {
+              const start = new Date(startYear, month, 1);
+              const end =
+                endMonth !== null && endYear !== null
+                  ? new Date(endYear, endMonth + 1, 0)
+                  : new Date(startYear, month + 1, 0);
+              onChange({ start, end });
+            }
+          }}
+        >
+          <SelectTrigger className="w-32 h-8 border-0 shadow-none text-sm">
+            <SelectValue placeholder="Start Month" />
+          </SelectTrigger>
+          <SelectContent>
+            {months.map((month, index) => (
+              <SelectItem key={month} value={index.toString()}>
+                {month}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-              <Select
-                value={startYear?.toString()}
-                onValueChange={(v) => setStartYear(Number.parseInt(v, 10))}
-              >
-                <SelectTrigger id="start-year">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <Select
+          value={startYear?.toString() ?? ""}
+          onValueChange={(v) => {
+            const year = Number.parseInt(v, 10);
+            setStartYear(year);
+            if (startMonth !== null) {
+              const start = new Date(year, startMonth, 1);
+              const end =
+                endMonth !== null && endYear !== null
+                  ? new Date(endYear, endMonth + 1, 0)
+                  : new Date(year, startMonth + 1, 0);
+              onChange({ start, end });
+            }
+          }}
+        >
+          <SelectTrigger className="w-20 h-8 border-0 shadow-none text-sm">
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+          <SelectContent>
+            {years.map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <div>
-            <label
-              htmlFor="end-month"
-              className="text-sm font-medium mb-2 block"
-            >
-              End Date (Optional)
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <Select
-                value={endMonth?.toString() ?? ""}
-                onValueChange={(v) =>
-                  setEndMonth(v ? Number.parseInt(v, 10) : null)
-                }
-              >
-                <SelectTrigger id="end-month">
-                  <SelectValue placeholder="Month" />
-                </SelectTrigger>
-                <SelectContent>
-                  {months.map((month, index) => (
-                    <SelectItem key={month} value={index.toString()}>
-                      {month}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <span className="text-muted-foreground text-xs">to</span>
 
-              <Select
-                value={endYear?.toString() ?? ""}
-                onValueChange={(v) =>
-                  setEndYear(v ? Number.parseInt(v, 10) : null)
-                }
-              >
-                <SelectTrigger id="end-year">
-                  <SelectValue placeholder="Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((year) => (
-                    <SelectItem key={year} value={year.toString()}>
-                      {year}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+        <Select
+          value={endMonth?.toString() ?? ""}
+          onValueChange={(v) => {
+            const month = v ? Number.parseInt(v, 10) : null;
+            setEndMonth(month);
+            if (
+              month !== null &&
+              endYear !== null &&
+              startMonth !== null &&
+              startYear !== null
+            ) {
+              const start = new Date(startYear, startMonth, 1);
+              const end = new Date(endYear, month + 1, 0);
+              onChange({ start, end });
+            }
+          }}
+        >
+          <SelectTrigger className="w-32 h-8 border-0 shadow-none text-sm">
+            <SelectValue placeholder="End Month" />
+          </SelectTrigger>
+          <SelectContent>
+            {months.map((month, index) => (
+              <SelectItem key={month} value={index.toString()}>
+                {month}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
-          <div className="flex gap-2 pt-2">
-            <Button
-              onClick={handleApply}
-              className="flex-1 bg-[#e42d42] hover:bg-[#d02839]"
-            >
-              Apply
-            </Button>
-            <Button
-              onClick={handleClear}
-              variant="outline"
-              className="flex-1 bg-transparent"
-            >
-              Clear
-            </Button>
-          </div>
-        </div>
-      </PopoverContent>
-    </Popover>
+        <Select
+          value={endYear?.toString() ?? ""}
+          onValueChange={(v) => {
+            const year = v ? Number.parseInt(v, 10) : null;
+            setEndYear(year);
+            if (
+              year !== null &&
+              endMonth !== null &&
+              startMonth !== null &&
+              startYear !== null
+            ) {
+              const start = new Date(startYear, startMonth, 1);
+              const end = new Date(year, endMonth + 1, 0);
+              onChange({ start, end });
+            }
+          }}
+        >
+          <SelectTrigger className="w-20 h-8 border-0 shadow-none text-sm">
+            <SelectValue placeholder="Year" />
+          </SelectTrigger>
+          <SelectContent>
+            {years.map((year) => (
+              <SelectItem key={year} value={year.toString()}>
+                {year}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {(startMonth !== null || endMonth !== null) && (
+          <Button
+            onClick={handleClear}
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-xs"
+          >
+            Clear
+          </Button>
+        )}
+      </div>
+    </div>
   );
 }
