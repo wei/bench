@@ -61,7 +61,7 @@ export default async function LoginPage(props: LoginPageProps) {
         </div>
 
         <div className="flex flex-col gap-12 p-8 sm:p-12 lg:order-2 lg:p-16">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 self-left">
             <BenchLogo className={`w-8 h-4 ${brandColorClass}`} />
             <h1
               className={`text-2xl font-bold font-headline ${brandColorClass}`}
