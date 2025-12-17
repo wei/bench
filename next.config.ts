@@ -43,6 +43,11 @@ const nextConfig: NextConfig = {
         hostname: "mlhusercontent.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "mlh-core-cache.s3.amazonaws.com",
+        pathname: "/**",
+      },
     ],
   },
 };

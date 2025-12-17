@@ -103,7 +103,7 @@ export async function fetchMlhEvents(args?: {
   const endsAtDefault = formatDateYYYYMMDD(endsAtDefaultDate);
 
   const url = buildUrl(baseUrl, "/v4/events", {
-    limit: String(args?.limit ?? 50),
+    limit: String(args?.limit ?? 250),
     "starts_at[gte]": args?.startsAtGte ?? startsAtDefault,
     "ends_at[lte]": args?.endsAtLte ?? endsAtDefault,
     "event_format[eq]": args?.eventFormatEq ?? "hackathon",

@@ -100,7 +100,7 @@ export async function GET(req: NextRequest) {
 
   // Trigger event sync in the background (fire and forget)
   syncMlhEventsToDb({
-    daysFromNow: 30,
+    daysFromNow: 60,
     imagesOnly: true,
   }).catch((error) => {
     console.error("[auth/callback] Failed to sync events:", error);
