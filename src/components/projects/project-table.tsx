@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useDataTable } from "@/hooks/use-data-table";
 import { usePrizeCategories } from "@/hooks/use-prize-categories";
+import { exportProjectsToCSV } from "@/lib/csv-export";
 import {
   getPrizeStatusDisplay,
   getPrizeTracks,
@@ -226,6 +227,7 @@ interface ProjectTableProps {
   readonly onBatchRun: (projectIds: string[]) => void;
   readonly onImport: () => void;
   readonly onProjectClick: (project: Project) => void;
+  readonly onJudgingViewChange?: (isJudgingView: boolean) => void;
 }
 
 // Status options for filtering
@@ -255,8 +257,25 @@ const complexityOptions = [
 ];
 
 // Helper function to check if a project is failed/invalid/errored
+// Note: For reruns, we explicitly EXCLUDE projects that are invalid because
+// they fall outside the event window or have no GitHub repository.
 function isFailedOrInvalidOrErrored(status: ProjectProcessingStatus): boolean {
-  return status === "errored" || status.startsWith("invalid:");
+  if (status === "errored") return true;
+
+  if (!status.startsWith("invalid:")) return false;
+
+  // Exclude these invalid types from "rerun failed" flows:
+  // - invalid:github_inaccessible (no GitHub repository / inaccessible)
+  // - invalid:rule_violation (e.g. commits outside event window)
+  if (
+    status === "invalid:github_inaccessible" ||
+    status === "invalid:rule_violation"
+  ) {
+    return false;
+  }
+
+  // Any other invalid status (if added in the future) is treated as rerunnable
+  return true;
 }
 
 export function ProjectTable({
@@ -265,9 +284,16 @@ export function ProjectTable({
   onBatchRun,
   onImport,
   onProjectClick,
+  onJudgingViewChange,
 }: ProjectTableProps) {
   const { favoriteProjects, toggleFavoriteProject } = useStore();
   const [title] = useQueryState("title", parseAsString.withDefault(""));
+  const [isJudgingView, setIsJudgingView] = React.useState(false);
+
+  // Notify parent when judging view changes
+  React.useEffect(() => {
+    onJudgingViewChange?.(isJudgingView);
+  }, [isJudgingView, onJudgingViewChange]);
   const [status, setStatus] = useQueryState(
     "status",
     parseAsArrayOf(parseAsString).withDefault([]),
@@ -342,6 +368,11 @@ export function ProjectTable({
   // Filter data client-side based on URL state
   const filteredData = React.useMemo(() => {
     return projects.filter((project) => {
+      // In judging view, only show favorited projects
+      if (isJudgingView && !favoriteProjects.includes(project.id)) {
+        return false;
+      }
+
       const matchesTitle =
         title === "" ||
         project.project_title?.toLowerCase().includes(title.toLowerCase());
@@ -391,6 +422,8 @@ export function ProjectTable({
     });
   }, [
     projects,
+    isJudgingView,
+    favoriteProjects,
     title,
     status,
     complexity,
@@ -412,7 +445,7 @@ export function ProjectTable({
       return prizeCategoryMap.get(slug) || slug;
     };
 
-    return [
+    const cols: ColumnDef<Project>[] = [
       {
         id: "select",
         header: ({ table }) => (
@@ -902,6 +935,7 @@ export function ProjectTable({
         enableSorting: false,
       },
     ];
+    return cols;
   }, [
     onProjectClick,
     onRunAnalysis,
@@ -918,20 +952,49 @@ export function ProjectTable({
       sorting: [],
       columnPinning: {
         left: ["select", "favorite"],
-        right: ["actions", "notes"],
+        right: isJudgingView ? ["notes"] : ["actions", "notes"],
       },
       columnVisibility: {
-        judging_score: false,
-        notes: false,
+        judging_score: isJudgingView,
+        notes: isJudgingView,
+        status: !isJudgingView,
+        actions: !isJudgingView,
       },
     },
     getRowId: (row) => row.id,
   });
 
+  // Update column visibility when judging view changes
+  React.useEffect(() => {
+    table.getColumn("status")?.toggleVisibility(!isJudgingView);
+    table.getColumn("actions")?.toggleVisibility(!isJudgingView);
+    table.getColumn("judging_score")?.toggleVisibility(isJudgingView);
+    table.getColumn("notes")?.toggleVisibility(isJudgingView);
+  }, [isJudgingView, table]);
+
+  const handleExportCSV = React.useCallback(() => {
+    exportProjectsToCSV(filteredData);
+  }, [filteredData]);
+
   const handleRunAll = () => {
-    // Include ALL projects, even invalid or errored ones
-    const allIds = filteredData.map((p) => p.id);
-    onBatchRun(allIds);
+    // Run all projects that:
+    // - Have at least one prize track
+    // - Are NOT invalid because they fall outside the event window
+    //   or because they don't have a GitHub repository
+    const allIds = filteredData
+      .filter((p) => {
+        const hasPrizeTracks = getPrizeTracks(p).length > 0;
+        const isExcludedInvalidStatus =
+          p.status === "invalid:github_inaccessible" ||
+          p.status === "invalid:rule_violation";
+
+        return hasPrizeTracks && !isExcludedInvalidStatus;
+      })
+      .map((p) => p.id);
+
+    if (allIds.length > 0) {
+      onBatchRun(allIds);
+    }
   };
 
   // Get all failed/invalid/errored project IDs
@@ -952,9 +1015,15 @@ export function ProjectTable({
 
   const { showProcessingModal } = useStore();
 
+  // Check if we're in judging view with no results
+  const isJudgingViewWithNoResults = isJudgingView && filteredData.length === 0;
+  const emptyStateMessage = isJudgingViewWithNoResults
+    ? "No results found. Favorite a project by clicking the star icon for it to appear in judging view."
+    : undefined;
+
   return (
     <div className="space-y-4 relative">
-      <DataTable table={table}>
+      <DataTable table={table} emptyStateMessage={emptyStateMessage}>
         {/* Overlay background when processing - contained within DataTable */}
         {showProcessingModal && (
           <div className="absolute inset-0 bg-blue-50/20 dark:bg-blue-950/50 backdrop-blur-xs z-40 rounded-md pointer-events-none" />
@@ -969,10 +1038,12 @@ export function ProjectTable({
         >
           <DataTableToolbar
             table={table}
-            onRunAll={handleRunAll}
-            onRunSelected={(ids) => onBatchRun(ids)}
-            onRerunFailed={handleRerunFailed}
-            onImport={onImport}
+            onRunAll={isJudgingView ? undefined : handleRunAll}
+            onRunSelected={isJudgingView ? undefined : (ids) => onBatchRun(ids)}
+            onRerunFailed={isJudgingView ? undefined : handleRerunFailed}
+            onImport={isJudgingView ? handleExportCSV : onImport}
+            isJudgingView={isJudgingView}
+            onJudgingViewChange={setIsJudgingView}
             allProcessed={allProcessed}
             hasNoProjects={hasNoProjects}
             hasFailedProjects={hasFailedProjects}
