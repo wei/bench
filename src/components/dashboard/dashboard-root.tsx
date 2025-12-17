@@ -9,7 +9,9 @@ import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
 import { ProjectDetailPane } from "@/components/projects/project-detail-pane";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useRealtimeSubscription } from "@/hooks/use-realtime-subscription";
+import { useSession } from "@/hooks/use-session";
 import { startProjectReview } from "@/lib/data-service";
+import { sendReviewTriggeredWebhook } from "@/lib/discord";
 import type { Project } from "@/lib/store";
 import { useStore } from "@/lib/store";
 
@@ -52,6 +54,7 @@ export function DashboardRoot({ children }: DashboardRootProps) {
     setShowProcessingModal,
     addNotification,
   } = useStore();
+  const { user } = useSession();
   // Using next-themes for theme management instead of store
   // const { theme } = useTheme(); // Assuming we want to use it, but for now just removing the broken store reference
 
@@ -125,6 +128,16 @@ export function DashboardRoot({ children }: DashboardRootProps) {
     const project = projects.find((p) => p.id === projectId);
     if (!project) return;
 
+    const eventName =
+      events.find((e) => e.id === (project.event_id || activeEventId))?.name ??
+      null;
+
+    void sendReviewTriggeredWebhook({
+      userEmail: user?.email,
+      eventName,
+      projectCount: 1,
+    });
+
     setShowProcessingModal(false);
     setProcessingProjects(
       useStore.getState().processingProjects.filter((id) => id !== projectId),
@@ -163,6 +176,19 @@ export function DashboardRoot({ children }: DashboardRootProps) {
       projectIds.length === 1
         ? `Starting review for ${projectNames[0]}`
         : `Starting review for ${projectIds.length} projects`;
+
+    const fallbackEventId =
+      projects.find((p) => p.id === projectIds[0])?.event_id ?? null;
+    const eventName =
+      events.find((e) => e.id === activeEventId)?.name ??
+      events.find((e) => e.id === fallbackEventId)?.name ??
+      null;
+
+    void sendReviewTriggeredWebhook({
+      userEmail: user?.email,
+      eventName,
+      projectCount: projectIds.length,
+    });
 
     toast.info(startMessage);
     addNotification({ message: startMessage, type: "info" });

@@ -254,7 +254,10 @@ export function ProjectDetailPane({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         className="w-full sm:max-w-4xl p-0 flex flex-col h-full gap-0"
-        onInteractOutside={(e: any) => {
+        onInteractOutside={(e: {
+          detail: { originalEvent: Event };
+          preventDefault: () => void;
+        }) => {
           const { originalEvent } = e.detail;
           const target = originalEvent.target as HTMLElement;
           if (

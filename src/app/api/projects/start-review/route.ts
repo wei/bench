@@ -21,7 +21,7 @@ export async function POST(request: Request) {
 
     const { data: project, error } = await supabase
       .from("projects")
-      .select("*, event:events(starts_at, ends_at)")
+      .select("*, event:events(id, name, starts_at, ends_at)")
       .eq("id", projectId.trim())
       .single();
 
