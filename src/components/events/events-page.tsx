@@ -7,8 +7,11 @@ import { useState } from "react";
 import { ImportEventsButton } from "@/components/events/import-events-button";
 import { MonthRangePicker } from "@/components/month-range-picker";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Card, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { useDashboardData } from "@/hooks/use-dashboard-data";
 import { useStore } from "@/lib/store";
 
 type EventStatus = {
@@ -49,6 +52,13 @@ function EventImage({
 export function EventsPage() {
   const { events, projects } = useStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAllEvents, setShowAllEvents] = useState(() => {
+    if (typeof window !== "undefined") {
+      const stored = localStorage.getItem("showAllEvents");
+      return stored === "true";
+    }
+    return false;
+  });
   const [dateRange, setDateRange] = useState<{
     start: Date | null;
     end: Date | null;
@@ -56,6 +66,17 @@ export function EventsPage() {
     start: null,
     end: null,
   });
+
+  // Fetch events with current filter setting
+  useDashboardData(null, showAllEvents);
+
+  // Persist toggle state to localStorage
+  const handleToggle = (value: boolean) => {
+    setShowAllEvents(value);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("showAllEvents", String(value));
+    }
+  };
 
   const filteredEvents = events
     .filter((event) => {
@@ -154,7 +175,25 @@ export function EventsPage() {
           </p>
         </div>
 
-        <div className="shrink-0">
+        <div className="shrink-0 flex gap-2">
+          <ButtonGroup>
+            <Button
+              variant="outline"
+              onClick={() => handleToggle(false)}
+              data-active={!showAllEvents}
+              className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
+            >
+              My Events
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleToggle(true)}
+              data-active={showAllEvents}
+              className="data-[active=true]:bg-primary data-[active=true]:text-primary-foreground"
+            >
+              All
+            </Button>
+          </ButtonGroup>
           <ImportEventsButton />
         </div>
       </div>
