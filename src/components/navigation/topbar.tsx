@@ -13,6 +13,8 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
+import { Button } from "@/components/ui/button";
+import { useSession } from "@/hooks/use-session";
 import type { Event, Project } from "@/lib/store";
 
 interface TopBarProps {
@@ -21,7 +23,18 @@ interface TopBarProps {
 }
 export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
   const pathname = usePathname();
+  const { user, isLoading } = useSession();
   const isEventsPage = pathname === "/events";
+
+  const fullName = isLoading
+    ? "Loading..."
+    : user
+      ? `${user.firstName}${user.lastName ? ` ${user.lastName}` : ""}`
+      : "Guest";
+
+  const initials = user
+    ? `${user.firstName?.[0] ?? ""}${user.lastName?.[0] ?? ""}` || "MLH"
+    : "MLH";
 
   return (
     <header className="h-16 bg-white dark:bg-[#262626] border-b border-gray-200 dark:border-[#404040] flex items-center justify-between px-6">
@@ -91,13 +104,15 @@ export function TopBar({ selectedEvent, selectedProject }: TopBarProps) {
 
         <div className="flex items-center gap-2 ml-2">
           <Avatar className="w-8 h-8">
-            <AvatarImage
-              src="https://github.com/lryanle.png"
-              alt="Ryan Lahlou"
-            />
-            <AvatarFallback>RL</AvatarFallback>
+            <AvatarImage src={user?.avatarUrl ?? undefined} alt={fullName} />
+            <AvatarFallback>{initials}</AvatarFallback>
           </Avatar>
-          <span className="text-sm font-medium">Ryan Lahlou</span>
+          <span className="text-sm font-medium max-w-32 truncate">
+            {fullName}
+          </span>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/api/auth/logout">Log out</Link>
+          </Button>
         </div>
       </div>
     </header>
