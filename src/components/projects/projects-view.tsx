@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Calendar, FolderKanban } from "lucide-react";
+import { ArrowRight, Calendar, Folder } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
 import { useState } from "react";
@@ -292,15 +292,15 @@ export function ProjectsView({
                   <DialogTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                      className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                       onClick={handleOpenDateDialog}
                     >
                       <Calendar className="w-3 h-3 mr-1" />
-                      <span className="underline decoration-dashed decoration-1 underline-offset-2">
+                      <span>
                         {startDateTime.date} {startDateTime.time}
                       </span>
                       <ArrowRight className="w-3 h-3 mx-1" />
-                      <span className="underline decoration-dashed decoration-1 underline-offset-2">
+                      <span>
                         {endDateTime.date} {endDateTime.time}
                       </span>
                     </Badge>
@@ -361,8 +361,8 @@ export function ProjectsView({
 
               {/* Number of Submissions Badge */}
               <Badge variant="outline">
-                <FolderKanban className="w-3 h-3 mr-1" />
-                {filteredProjects.length} submissions
+                <Folder className="w-3 h-3 mr-1" />
+                {filteredProjects.length}
               </Badge>
             </div>
           </div>
