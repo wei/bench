@@ -62,6 +62,7 @@ export function buildCopilotChatPrompt(
     "3) Give a usage readiness rating (1-5) with a short rationale.",
     "4) Give an implementation rating (invalid/beginner/intermediate/advanced) and describe what the implementation actually covers.",
     "5) For each prize category, note alignment using its name and system prompt for guidance.",
+    "6) Evaluate: originality/creativity (25%), technical complexity (25%), adherence to theme (25%), practical implementation (25%).",
     "",
     "When reporting information to me, be extremely direct and concise and sacrifice grammar for the sake of concision. Prefer list format.",
   ].join("\n");
