@@ -8,6 +8,7 @@ import {
   LayoutTemplate,
   Loader2,
   Play,
+  Star,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,7 +32,7 @@ import {
   getPrizeTracks,
   parsePrizeResults,
 } from "@/lib/project-utils";
-import type { Project } from "@/lib/store";
+import { type Project, useStore } from "@/lib/store";
 import { buildCopilotChatPrompt } from "@/prompts/copilot-chat";
 
 interface ProjectDetailPaneProps {
@@ -52,6 +53,7 @@ export function ProjectDetailPane({
     prizeCategoryNameMap,
     prizeCategories,
   } = usePrizeCategories();
+  const { favoriteProjects, toggleFavoriteProject } = useStore();
 
   if (!project) return null;
 
@@ -105,6 +107,24 @@ export function ProjectDetailPane({
               <div className="flex items-center justify-between gap-4">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={() => toggleFavoriteProject(project.id)}
+                      className="group p-1.5 hover:bg-gray-100 rounded-md transition-all border border-transparent hover:border-gray-200 outline-none focus-visible:ring-2 focus-visible:ring-gray-400"
+                      aria-label={
+                        favoriteProjects.includes(project.id)
+                          ? "Remove from favorites"
+                          : "Add to favorites"
+                      }
+                    >
+                      <Star
+                        className={`w-6 h-6 transition-colors ${
+                          favoriteProjects.includes(project.id)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-gray-300 group-hover:text-gray-400"
+                        }`}
+                      />
+                    </button>
                     <SheetTitle className="text-4xl font-bold text-gray-900 font-headline wrap-break-word leading-tight">
                       {project.project_title}
                     </SheetTitle>
