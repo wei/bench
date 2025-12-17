@@ -195,12 +195,34 @@ export function ProjectDetailPane({
               const showPrizeTracks = hasPrizeTracks || hasPrizeResults;
               if (!showPrizeTracks) return null;
 
-              const tracksToShow =
+              const unsortedTracks =
                 prizeTracks.length > 0
                   ? prizeTracks
                   : prizeResults
                     ? Object.keys(prizeResults)
                     : [];
+
+              const tracksToShow = [...unsortedTracks].sort((a, b) => {
+                const getStatus = (slug: string) => {
+                  const result = prizeResults ? prizeResults[slug] : null;
+                  return getPrizeStatusDisplay(result).status;
+                };
+
+                const statusOrder: Record<string, number> = {
+                  valid: 0,
+                  invalid: 1,
+                  processing: 2,
+                  errored: 4,
+                };
+
+                const statusA = getStatus(a) || "unprocessed";
+                const statusB = getStatus(b) || "unprocessed";
+
+                const rankA = statusOrder[statusA] ?? 3; // 3 for unprocessed/default
+                const rankB = statusOrder[statusB] ?? 3;
+
+                return rankA - rankB;
+              });
 
               return (
                 <div className="space-y-4">
