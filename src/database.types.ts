@@ -74,6 +74,7 @@ export type Database = {
           find_words: string[]
           id: string
           name: string
+          short_name: string | null
           slug: string
           system_prompt: string
           updated_at: string
@@ -83,6 +84,7 @@ export type Database = {
           find_words?: string[]
           id?: string
           name: string
+          short_name?: string | null
           slug: string
           system_prompt: string
           updated_at?: string
@@ -92,6 +94,7 @@ export type Database = {
           find_words?: string[]
           id?: string
           name?: string
+          short_name?: string | null
           slug?: string
           system_prompt?: string
           updated_at?: string

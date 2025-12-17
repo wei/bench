@@ -89,7 +89,7 @@ export function ProjectTable({
     "complexity",
     parseAsArrayOf(parseAsString).withDefault([]),
   );
-  const { prizeCategoryMap } = usePrizeCategories();
+  const { prizeCategoryMap, prizeCategoryNameMap } = usePrizeCategories();
 
   // Filter data client-side based on URL state
   const filteredData = React.useMemo(() => {
@@ -306,7 +306,9 @@ export function ProjectTable({
               {prizeTracks.length > 0 ? (
                 prizeTracks.map((trackSlug) => {
                   const result = results[trackSlug];
-                  const displayName = getPrizeDisplayName(trackSlug);
+                  const shortDisplayName = getPrizeDisplayName(trackSlug); // short_name or name fallback
+                  const fullName =
+                    prizeCategoryNameMap.get(trackSlug) || trackSlug; // full name for tooltip
                   const { status, message } = getPrizeStatusDisplay(result);
 
                   return (
@@ -314,11 +316,11 @@ export function ProjectTable({
                       key={trackSlug}
                       kind="prize"
                       status={status}
-                      tooltipTitle={displayName}
+                      tooltipTitle={fullName}
                       tooltip={message}
                       className="text-xs"
                     >
-                      {displayName}
+                      {shortDisplayName}
                       {status === "valid" && " ✓"}
                       {status === "invalid" && " ?"}
                     </StatusBadge>
@@ -415,6 +417,7 @@ export function ProjectTable({
     favoriteProjects,
     handleToggleFavorite,
     prizeCategoryMap,
+    prizeCategoryNameMap,
   ]);
 
   const { table } = useDataTable({
