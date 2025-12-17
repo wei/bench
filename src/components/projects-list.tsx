@@ -230,15 +230,18 @@ export function ProjectsList({ eventId }: { eventId?: string }) {
 
               {project.tech_stack && project.tech_stack.length > 0 && (
                 <div className="flex flex-wrap gap-1 pt-2">
-                  {project.tech_stack.slice(0, 3).map((tech, idx) => (
-                    <span
-                      key={tech}
-                      className="text-xs text-zinc-500 dark:text-zinc-500"
-                    >
-                      {tech}
-                      {idx < Math.min(project.tech_stack.length - 1, 2) && ","}
-                    </span>
-                  ))}
+                  {project.tech_stack
+                    .slice(0, 3)
+                    .map((tech: string, idx: number) => (
+                      <span
+                        key={tech}
+                        className="text-xs text-zinc-500 dark:text-zinc-500"
+                      >
+                        {tech}
+                        {idx < Math.min(project.tech_stack.length - 1, 2) &&
+                          ","}
+                      </span>
+                    ))}
                   {project.tech_stack.length > 3 && (
                     <span className="text-xs text-zinc-500 dark:text-zinc-500">
                       +{project.tech_stack.length - 3} more

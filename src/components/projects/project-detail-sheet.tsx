@@ -86,7 +86,7 @@ export function ProjectDetailSheet({
                 </span>
                 <div className="flex flex-wrap gap-1 mt-1">
                   {project.tech_stack.length > 0 ? (
-                    project.tech_stack.map((tech) => (
+                    project.tech_stack.map((tech: string) => (
                       <Badge key={tech} variant="outline">
                         {tech}
                       </Badge>

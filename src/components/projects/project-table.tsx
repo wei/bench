@@ -40,6 +40,7 @@ import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
   getPrizeStatusDisplay,
   getPrizeTracks,
+  getStatusLabel,
   getStatusTooltipMessage,
   parsePrizeResults,
 } from "@/lib/project-utils";
@@ -48,6 +49,7 @@ import { useStore } from "@/lib/store";
 import { toTitleCase } from "@/lib/utils/string-utils";
 
 // Shared debounce timers ref (module-level to persist across renders)
+// Key format: `${projectId}:${type}` to support both rating and notes for the same project
 const debounceTimersRef = new Map<
   string,
   { timer: NodeJS.Timeout; type: "rating" | "notes" }
@@ -57,11 +59,11 @@ const debounceTimersRef = new Map<
 function JudgingScoreCell({ project }: { readonly project: Project }) {
   const { updateProject } = useStore();
   const [localValue, setLocalValue] = React.useState(
-    project.judging_rating ?? "",
+    String(project.judging_rating ?? ""),
   );
 
   React.useEffect(() => {
-    setLocalValue(project.judging_rating ?? "");
+    setLocalValue(String(project.judging_rating ?? ""));
   }, [project.judging_rating]);
 
   const updateProjectRef = React.useRef(updateProject);
@@ -69,12 +71,25 @@ function JudgingScoreCell({ project }: { readonly project: Project }) {
     updateProjectRef.current = updateProject;
   });
 
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    const timerKey = `${project.id}:rating`;
+    return () => {
+      const existing = debounceTimersRef.get(timerKey);
+      if (existing?.type === "rating") {
+        clearTimeout(existing.timer);
+        debounceTimersRef.delete(timerKey);
+      }
+    };
+  }, [project.id]);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     setLocalValue(inputValue);
 
-    // Clear existing timer
-    const existing = debounceTimersRef.get(project.id);
+    // Clear existing timer using unique key
+    const timerKey = `${project.id}:rating`;
+    const existing = debounceTimersRef.get(timerKey);
     if (existing?.type === "rating") {
       clearTimeout(existing.timer);
     }
@@ -104,10 +119,10 @@ function JudgingScoreCell({ project }: { readonly project: Project }) {
       } catch (error) {
         console.error("Failed to save judging rating:", error);
       }
-      debounceTimersRef.delete(project.id);
+      debounceTimersRef.delete(timerKey);
     }, 5000);
 
-    debounceTimersRef.set(project.id, { timer, type: "rating" });
+    debounceTimersRef.set(timerKey, { timer, type: "rating" });
   };
 
   return (
@@ -140,12 +155,25 @@ function NotesCell({ project }: { readonly project: Project }) {
     updateProjectRef.current = updateProject;
   });
 
+  // Cleanup timer on unmount
+  React.useEffect(() => {
+    const timerKey = `${project.id}:notes`;
+    return () => {
+      const existing = debounceTimersRef.get(timerKey);
+      if (existing?.type === "notes") {
+        clearTimeout(existing.timer);
+        debounceTimersRef.delete(timerKey);
+      }
+    };
+  }, [project.id]);
+
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = e.target.value;
     setLocalValue(newValue);
 
-    // Clear existing timer
-    const existing = debounceTimersRef.get(project.id);
+    // Clear existing timer using unique key
+    const timerKey = `${project.id}:notes`;
+    const existing = debounceTimersRef.get(timerKey);
     if (existing?.type === "notes") {
       clearTimeout(existing.timer);
     }
@@ -166,10 +194,10 @@ function NotesCell({ project }: { readonly project: Project }) {
       } catch (error) {
         console.error("Failed to save judging notes:", error);
       }
-      debounceTimersRef.delete(project.id);
+      debounceTimersRef.delete(timerKey);
     }, 5000);
 
-    debounceTimersRef.set(project.id, { timer, type: "notes" });
+    debounceTimersRef.set(timerKey, { timer, type: "notes" });
   };
 
   return (
@@ -274,7 +302,7 @@ export function ProjectTable({
   const uniqueTechStack = React.useMemo(() => {
     const techMap = new Map<string, string>(); // lowercase -> preferred version
     projects.forEach((project) => {
-      project.tech_stack?.forEach((tech) => {
+      project.tech_stack?.forEach((tech: string) => {
         if (tech) {
           const lowerKey = tech.toLowerCase();
           const existing = techMap.get(lowerKey);
@@ -336,13 +364,13 @@ export function ProjectTable({
           (techStackMode === "intersection"
             ? techStack.every((filterTech) =>
                 project.tech_stack.some(
-                  (projectTech) =>
+                  (projectTech: string) =>
                     projectTech.toLowerCase() === filterTech.toLowerCase(),
                 ),
               )
             : techStack.some((filterTech) =>
                 project.tech_stack.some(
-                  (projectTech) =>
+                  (projectTech: string) =>
                     projectTech.toLowerCase() === filterTech.toLowerCase(),
                 ),
               )));
@@ -487,6 +515,8 @@ export function ProjectTable({
             status === "processed"
               ? undefined
               : getStatusTooltipMessage(row.original);
+          const tooltipTitle =
+            status === "processed" ? undefined : getStatusLabel(status);
 
           let icon: React.ReactNode;
           if (status === "processed") {
@@ -532,6 +562,7 @@ export function ProjectTable({
             <StatusBadge
               kind="project"
               status={status}
+              tooltipTitle={tooltipTitle}
               tooltip={tooltipMessage}
               showInfoIcon={false}
               noRounded

@@ -114,12 +114,18 @@ export function ProjectsView({
         ends_at?: string | null;
         judging_end_time?: string | null;
       } = {};
+      // Always include starts_at and ends_at, even if empty (set to null)
       if (localStartTime) {
         updates.starts_at = new Date(localStartTime).toISOString();
+      } else {
+        updates.starts_at = null;
       }
       if (localEndTime) {
         updates.ends_at = new Date(localEndTime).toISOString();
+      } else {
+        updates.ends_at = null;
       }
+      // Judging end time handling (already has explicit null)
       if (localJudgingEndTime) {
         updates.judging_end_time = new Date(localJudgingEndTime).toISOString();
       } else {
