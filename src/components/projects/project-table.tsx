@@ -2,7 +2,12 @@
 
 import type { Column, ColumnDef } from "@tanstack/react-table";
 import { Play, Star } from "lucide-react";
-import { parseAsArrayOf, parseAsString, useQueryState } from "nuqs";
+import {
+  parseAsArrayOf,
+  parseAsString,
+  parseAsStringLiteral,
+  useQueryState,
+} from "nuqs";
 import * as React from "react";
 import { DataTable } from "@/components/data-table/data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -81,15 +86,76 @@ export function ProjectTable({
 }: ProjectTableProps) {
   const { favoriteProjects, toggleFavoriteProject } = useStore();
   const [title] = useQueryState("title", parseAsString.withDefault(""));
-  const [status] = useQueryState(
+  const [status, setStatus] = useQueryState(
     "status",
     parseAsArrayOf(parseAsString).withDefault([]),
   );
-  const [complexity] = useQueryState(
+  const [complexity, setComplexity] = useQueryState(
     "complexity",
     parseAsArrayOf(parseAsString).withDefault([]),
   );
-  const { prizeCategoryMap, prizeCategoryNameMap } = usePrizeCategories();
+  const [prizeTrack, setPrizeTrack] = useQueryState(
+    "prizeTrack",
+    parseAsString,
+  );
+  const [techStack, setTechStack] = useQueryState(
+    "techStack",
+    parseAsArrayOf(parseAsString).withDefault([]),
+  );
+  const [techStackMode, setTechStackMode] = useQueryState(
+    "techStackMode",
+    parseAsStringLiteral(["intersection", "union"] as const).withDefault(
+      "union",
+    ),
+  );
+  const [hasGithub, setHasGithub] = useQueryState(
+    "hasGithub",
+    parseAsStringLiteral(["true", "false"] as const),
+  );
+  const { prizeCategoryMap, prizeCategoryNameMap, prizeCategories } =
+    usePrizeCategories();
+
+  // Get unique tech stack values from all projects
+  // Deduplicate case-insensitively, preferring capitalized versions
+  const uniqueTechStack = React.useMemo(() => {
+    const techMap = new Map<string, string>(); // lowercase -> preferred version
+    projects.forEach((project) => {
+      project.tech_stack?.forEach((tech) => {
+        if (tech) {
+          const lowerKey = tech.toLowerCase();
+          const existing = techMap.get(lowerKey);
+          if (!existing) {
+            // First occurrence - use it
+            techMap.set(lowerKey, tech);
+          } else {
+            // Prefer version with first letter capitalized
+            const existingFirstUpper =
+              existing.charAt(0).toUpperCase() +
+              existing.slice(1).toLowerCase();
+            const techFirstUpper =
+              tech.charAt(0).toUpperCase() + tech.slice(1).toLowerCase();
+            if (existing !== existingFirstUpper && tech === techFirstUpper) {
+              techMap.set(lowerKey, tech);
+            } else if (
+              existing === existingFirstUpper &&
+              tech !== techFirstUpper
+            ) {
+              // Keep existing if it's already capitalized
+            } else if (
+              existing.charAt(0) !== existing.charAt(0).toUpperCase() &&
+              tech.charAt(0) === tech.charAt(0).toUpperCase()
+            ) {
+              // Prefer capitalized version
+              techMap.set(lowerKey, tech);
+            }
+          }
+        }
+      });
+    });
+    return Array.from(techMap.values()).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" }),
+    );
+  }, [projects]);
 
   // Filter data client-side based on URL state
   const filteredData = React.useMemo(() => {
@@ -104,9 +170,53 @@ export function ProjectTable({
         (project.technical_complexity &&
           complexity.includes(project.technical_complexity));
 
-      return matchesTitle && matchesStatus && matchesComplexity;
+      // Prize track filter (single selection)
+      const matchesPrizeTrack =
+        !prizeTrack || getPrizeTracks(project).includes(prizeTrack);
+
+      // Tech stack filter (intersection or union, case-insensitive)
+      const matchesTechStack =
+        techStack.length === 0 ||
+        (project.tech_stack &&
+          project.tech_stack.length > 0 &&
+          (techStackMode === "intersection"
+            ? techStack.every((filterTech) =>
+                project.tech_stack.some(
+                  (projectTech) =>
+                    projectTech.toLowerCase() === filterTech.toLowerCase(),
+                ),
+              )
+            : techStack.some((filterTech) =>
+                project.tech_stack.some(
+                  (projectTech) =>
+                    projectTech.toLowerCase() === filterTech.toLowerCase(),
+                ),
+              )));
+
+      // GitHub filter
+      const matchesGithub =
+        hasGithub === null ||
+        (hasGithub === "true" ? !!project.github_url : !project.github_url);
+
+      return (
+        matchesTitle &&
+        matchesStatus &&
+        matchesComplexity &&
+        matchesPrizeTrack &&
+        matchesTechStack &&
+        matchesGithub
+      );
     });
-  }, [projects, title, status, complexity]);
+  }, [
+    projects,
+    title,
+    status,
+    complexity,
+    prizeTrack,
+    techStack,
+    techStackMode,
+    hasGithub,
+  ]);
 
   const handleToggleFavorite = React.useCallback(
     async (projectId: string) => {
@@ -479,6 +589,28 @@ export function ProjectTable({
             hasNoProjects={hasNoProjects}
             hasFailedProjects={hasFailedProjects}
             failedProjectsCount={failedInvalidErroredProjects.length}
+            status={status}
+            onStatusChange={setStatus}
+            complexity={complexity}
+            onComplexityChange={setComplexity}
+            prizeTrack={prizeTrack ?? null}
+            onPrizeTrackChange={(value) => setPrizeTrack(value)}
+            prizeCategories={prizeCategories}
+            techStack={techStack}
+            onTechStackChange={setTechStack}
+            techStackMode={techStackMode}
+            onTechStackModeChange={setTechStackMode}
+            uniqueTechStack={uniqueTechStack}
+            hasGithub={hasGithub ?? null}
+            onHasGithubChange={(value) => {
+              if (value === null) {
+                setHasGithub(null);
+              } else if (value === "true" || value === "false") {
+                setHasGithub(value);
+              }
+            }}
+            allProjects={projects}
+            title={title}
           />
         </div>
 
