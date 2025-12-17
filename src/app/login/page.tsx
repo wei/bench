@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import { BenchLogo } from "@/components/icons/bench-logo";
 import { Button } from "@/components/ui/button";
@@ -48,21 +49,15 @@ export default async function LoginPage(props: LoginPageProps) {
   return (
     <div className="min-h-svh bg-background text-foreground">
       <div className="grid min-h-svh lg:grid-cols-2">
-        <div className="hidden border-border/70 bg-card/60 lg:block lg:border-r">
-          <div className="flex h-full flex-col justify-between p-12">
-            <div className="space-y-3">
-              <p className="text-xs text-muted-foreground">
-                Built for hackathons
-              </p>
-              <p className="text-2xl font-semibold text-foreground">
-                Keep scoring calm and consistent.
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Bench keeps judges, submissions, and decisions aligned with a
-                single sign in.
-              </p>
-            </div>
-          </div>
+        <div className="relative hidden overflow-hidden bg-card/60 lg:block lg:border-r lg:border-border/70">
+          <Image
+            src="/background.webp"
+            alt="Bench background"
+            fill
+            priority
+            sizes="100vh"
+            className="object-cover"
+          />
         </div>
 
         <div className="flex flex-col gap-12 p-8 sm:p-12 lg:order-2 lg:p-16">
