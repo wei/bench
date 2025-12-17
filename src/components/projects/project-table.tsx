@@ -2,6 +2,7 @@
 
 import type { Column, ColumnDef } from "@tanstack/react-table";
 import {
+  AlertCircle,
   AlertTriangle,
   CheckCircle2,
   ChevronUp,
@@ -273,12 +274,12 @@ function isFailedOrInvalidOrErrored(status: ProjectProcessingStatus): boolean {
   // Exclude these invalid types from "rerun failed" flows:
   // - invalid:github_inaccessible (no GitHub repository / inaccessible)
   // - invalid:rule_violation (e.g. commits outside event window)
-  if (
-    status === "invalid:github_inaccessible" ||
-    status === "invalid:rule_violation"
-  ) {
-    return false;
-  }
+  // if (
+  //   status === "invalid:github_inaccessible" ||
+  //   status === "invalid:rule_violation"
+  // ) {
+  //   return false;
+  // }
 
   // Any other invalid status (if added in the future) is treated as rerunnable
   return true;
@@ -342,6 +343,80 @@ export function ProjectTable({
     "hasGithub",
     parseAsStringLiteral(["true", "false"] as const),
   );
+
+  const duplicateNameInfoById = React.useMemo(() => {
+    type DuplicateInfo = { tooltip: string };
+
+    const normalizeTitle = (title: string | null | undefined): string => {
+      if (!title) return "";
+      return title.toLowerCase().replace(/[^a-z0-9]/g, "");
+    };
+
+    const groups = new Map<string, Project[]>();
+
+    projects.forEach((project) => {
+      const key = normalizeTitle(project.project_title);
+      if (!key) return;
+      const existing = groups.get(key);
+      if (existing) {
+        existing.push(project);
+      } else {
+        groups.set(key, [project]);
+      }
+    });
+
+    const result = new Map<string, DuplicateInfo>();
+
+    groups.forEach((group) => {
+      if (group.length <= 1) return;
+
+      group.forEach((project) => {
+        const others = group.filter((p) => p.id !== project.id);
+        if (others.length === 0) return;
+
+        const thisTitle = project.project_title ?? "";
+        const duplicateTitles = new Set<string>();
+        const similarTitles = new Set<string>();
+
+        others.forEach((other) => {
+          const otherTitle = other.project_title ?? "";
+          if (!otherTitle) return;
+          if (otherTitle === thisTitle) {
+            duplicateTitles.add(otherTitle);
+          } else {
+            similarTitles.add(otherTitle);
+          }
+        });
+
+        const parts: string[] = [];
+
+        if (duplicateTitles.size > 0) {
+          parts.push(`Duplicates: ${Array.from(duplicateTitles).join(", ")}`);
+        }
+
+        if (similarTitles.size > 0) {
+          parts.push(`Similar: ${Array.from(similarTitles).join(", ")}`);
+        }
+
+        if (parts.length === 0) {
+          const fallbackTitles = new Set(
+            others
+              .map((p) => p.project_title ?? "")
+              .filter((title) => title.trim().length > 0),
+          );
+          if (fallbackTitles.size > 0) {
+            parts.push(`Similar: ${Array.from(fallbackTitles).join(", ")}`);
+          }
+        }
+
+        if (parts.length > 0) {
+          result.set(project.id, { tooltip: parts.join(" · ") });
+        }
+      });
+    });
+
+    return result;
+  }, [projects]);
 
   // Check if URL has filter params - reactive to actual query state values
   const hasUrlParams = React.useMemo(() => {
@@ -743,17 +818,40 @@ export function ProjectTable({
         ),
         cell: ({ row }) => {
           const project = row.original;
+          const duplicateInfo = duplicateNameInfoById.get(project.id);
 
           return (
-            <div className="max-w-[150px]">
+            <div className="max-w-[200px] flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => onProjectClick(row.original)}
-                className="text-left hover:text-primary transition-colors font-medium underline cursor-pointer truncate block w-full"
+                className="text-left hover:text-primary transition-colors font-medium underline cursor-pointer truncate max-w-full"
                 title={project.project_title || undefined}
               >
                 {project.project_title}
               </button>
+              {duplicateInfo && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="inline-flex items-center text-red-500 ml-0.5">
+                        <AlertCircle className="h-4 w-4" aria-hidden="true" />
+                        <span className="sr-only">
+                          Similar or duplicate project name
+                        </span>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent className="max-w-72">
+                      <p className="font-semibold">
+                        Similar/Duplicate Project Name
+                      </p>
+                      {duplicateInfo.tooltip ? (
+                        <p>{duplicateInfo.tooltip}</p>
+                      ) : null}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
             </div>
           );
         },
@@ -1062,6 +1160,7 @@ export function ProjectTable({
     handleToggleFavorite,
     prizeCategoryMap,
     prizeCategoryNameMap,
+    duplicateNameInfoById.get,
   ]);
 
   // Merge persisted column visibility with default visibility
