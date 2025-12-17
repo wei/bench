@@ -120,7 +120,7 @@ function JudgingScoreCell({ project }: { readonly project: Project }) {
         console.error("Failed to save judging rating:", error);
       }
       debounceTimersRef.delete(timerKey);
-    }, 5000);
+    }, 2000);
 
     debounceTimersRef.set(timerKey, { timer, type: "rating" });
   };
@@ -195,7 +195,7 @@ function NotesCell({ project }: { readonly project: Project }) {
         console.error("Failed to save judging notes:", error);
       }
       debounceTimersRef.delete(timerKey);
-    }, 5000);
+    }, 2000);
 
     debounceTimersRef.set(timerKey, { timer, type: "notes" });
   };

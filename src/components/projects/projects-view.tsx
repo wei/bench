@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, Calendar, Folder } from "lucide-react";
+import { ArrowRight, Calendar, FolderKanban } from "lucide-react";
 import Image from "next/image";
 import * as React from "react";
 import { useState } from "react";
@@ -67,13 +67,20 @@ export function ProjectsView({
     const date = new Date(dateString);
     const month = date.getMonth() + 1;
     const day = date.getDate();
+    const year = date.getFullYear();
+    const currentYear = new Date().getFullYear();
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const ampm = hours >= 12 ? "pm" : "am";
     const displayHours = hours % 12 || 12;
     const displayMinutes = minutes.toString().padStart(2, "0");
+
+    // Include year if it's different from current year
+    const dateStr =
+      year !== currentYear ? `${month}/${day}/${year}` : `${month}/${day}`;
+
     return {
-      date: `${month}/${day}`,
+      date: dateStr,
       time: `${displayHours}:${displayMinutes}${ampm}`,
     };
   };
@@ -99,20 +106,19 @@ export function ProjectsView({
       setLocalEndTime(formatForInputMemo(activeEvent.ends_at));
       setLocalJudgingEndTime(
         formatForInputMemo(
-          (activeEvent as { judging_end_time?: string | null })
-            .judging_end_time,
+          (activeEvent as { judging_ends_at?: string | null }).judging_ends_at,
         ),
       );
       setIsDateDialogOpen(true);
     }
   }, [activeEvent, formatForInputMemo]);
 
-  const handleSaveDates = () => {
+  const handleSaveDates = async () => {
     if (activeEvent) {
       const updates: {
         starts_at?: string | null;
         ends_at?: string | null;
-        judging_end_time?: string | null;
+        judging_ends_at?: string | null;
       } = {};
       // Always include starts_at and ends_at, even if empty (set to null)
       if (localStartTime) {
@@ -127,11 +133,31 @@ export function ProjectsView({
       }
       // Judging end time handling (already has explicit null)
       if (localJudgingEndTime) {
-        updates.judging_end_time = new Date(localJudgingEndTime).toISOString();
+        updates.judging_ends_at = new Date(localJudgingEndTime).toISOString();
       } else {
-        updates.judging_end_time = null;
+        updates.judging_ends_at = null;
       }
+
+      // Update local store
       updateEvent(activeEvent.id, updates);
+
+      // Write to database
+      try {
+        const { createClient } = await import("@/lib/supabase/client");
+        const supabase = createClient();
+        const { error } = await supabase
+          .from("events")
+          .update(updates)
+          .eq("id", activeEvent.id);
+
+        if (error) {
+          console.error("Failed to save hackathon dates:", error);
+          // Optionally show an error notification to the user
+        }
+      } catch (error) {
+        console.error("Failed to save hackathon dates:", error);
+      }
+
       setIsDateDialogOpen(false);
     }
   };
@@ -163,8 +189,8 @@ export function ProjectsView({
     const now = currentTime;
     const start = new Date(activeEvent.starts_at);
     const end = new Date(activeEvent.ends_at);
-    const judgingEndTime = (activeEvent as { judging_end_time?: string | null })
-      .judging_end_time;
+    const judgingEndTime = (activeEvent as { judging_ends_at?: string | null })
+      .judging_ends_at;
     const judgingEnd = judgingEndTime ? new Date(judgingEndTime) : null;
 
     if (now < start) {
@@ -266,15 +292,15 @@ export function ProjectsView({
                   <DialogTrigger asChild>
                     <Badge
                       variant="outline"
-                      className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                      className="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                       onClick={handleOpenDateDialog}
                     >
                       <Calendar className="w-3 h-3 mr-1" />
-                      <span>
+                      <span className="underline decoration-dashed decoration-1 underline-offset-2">
                         {startDateTime.date} {startDateTime.time}
                       </span>
                       <ArrowRight className="w-3 h-3 mx-1" />
-                      <span>
+                      <span className="underline decoration-dashed decoration-1 underline-offset-2">
                         {endDateTime.date} {endDateTime.time}
                       </span>
                     </Badge>
@@ -335,8 +361,8 @@ export function ProjectsView({
 
               {/* Number of Submissions Badge */}
               <Badge variant="outline">
-                <Folder className="w-3 h-3 mr-1" />
-                {filteredProjects.length}
+                <FolderKanban className="w-3 h-3 mr-1" />
+                {filteredProjects.length} submissions
               </Badge>
             </div>
           </div>
