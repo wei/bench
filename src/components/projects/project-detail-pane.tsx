@@ -99,10 +99,30 @@ export function ProjectDetailPane({
             </div>
           </div>
 
-          <div className="px-8 py-4 space-y-4 bg-gray-50/50">
+          <div className="px-8 py-6 space-y-4 bg-gray-50/50">
             {/* Code Review Agent Section */}
             {/*! Bento Box Stats */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Technical Complexity */}
+              <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm space-y-3">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <LayoutTemplate className="w-5 h-5" />
+                  <span className="text-sm font-medium">
+                    Technical Complexity
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-2xl font-bold text-gray-900 capitalize">
+                      {project.technical_complexity || "N/A"}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Based on tech stack and feature analysis
+                  </p>
+                </div>
+              </div>
+
               {/* Description Accuracy */}
               <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm space-y-3">
                 <div className="flex items-center gap-2 text-gray-500">
@@ -123,39 +143,19 @@ export function ProjectDetailPane({
                   </p>
                 </div>
               </div>
-
-              {/* Technical Complexity */}
-              <div className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm space-y-3">
-                <div className="flex items-center gap-2 text-gray-500">
-                  <LayoutTemplate className="w-5 h-5" />
-                  <span className="text-sm font-medium">
-                    Technical Complexity
-                  </span>
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-2xl font-bold text-gray-900 capitalize">
-                      {project.technical_complexity || "N/A"}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-600">
-                    Based on tech stack and feature analysis
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Code Review Agent Section */}
             {/* Code Review Agent Section */}
             {codeReview && (
-              <div className="border rounded-lg p-4 bg-linear-to-br from-purple-50 to-blue-50">
-                <div className="flex items-start gap-3 mb-4">
+              <div className="border border-purple-100 rounded-xl p-5 bg-linear-to-br from-purple-50 to-blue-50 shadow-sm">
+                <div className="flex items-start gap-4 mb-4">
                   <div className="w-10 h-10 rounded-lg bg-(--mlh-purple) flex items-center justify-center shrink-0">
                     <Code2 className="w-5 h-5 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">
-                      Code Review Agent
+                    <h3 className="text-xl font-semibold text-gray-900 mb-1">
+                      Code Review
                     </h3>
                     <p className="text-sm text-gray-700">
                       {codeReview.review_description}
@@ -163,10 +163,7 @@ export function ProjectDetailPane({
                   </div>
                 </div>
 
-                <div className="mb-3">
-                  <p className="text-xs font-semibold text-gray-600 uppercase mb-2">
-                    Tech Stack
-                  </p>
+                <div>
                   <div className="flex flex-wrap gap-2">
                     {codeReview.tech_stack.map((tech) => (
                       <Badge
@@ -219,42 +216,55 @@ export function ProjectDetailPane({
                       const { status, message } = getPrizeStatusDisplay(result);
 
                       let StatusIcon = null;
+
                       if (status === "valid") {
                         StatusIcon = (
-                          <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                          <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center shrink-0">
+                            <CheckCircle2 className="w-5 h-5 text-green-600" />
+                          </div>
                         );
                       } else if (status === "invalid") {
                         StatusIcon = (
-                          <HelpCircle className="w-5 h-5 text-orange-500 shrink-0" />
+                          <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center shrink-0">
+                            <HelpCircle className="w-5 h-5 text-orange-600" />
+                          </div>
                         );
                       } else if (status === "processing") {
                         StatusIcon = (
-                          <Loader2 className="w-5 h-5 text-blue-500 animate-spin shrink-0" />
+                          <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                            <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+                          </div>
                         );
                       } else if (status === "errored") {
                         StatusIcon = (
-                          <XCircle className="w-5 h-5 text-red-500 shrink-0" />
+                          <div className="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+                            <XCircle className="w-5 h-5 text-red-600" />
+                          </div>
                         );
                       } else {
                         StatusIcon = (
-                          <div className="w-5 h-5 rounded-full border-2 border-gray-200 shrink-0" />
+                          <div className="w-10 h-10 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+                            <div className="w-5 h-5 rounded-full border-2 border-gray-300" />
+                          </div>
                         );
                       }
 
                       return (
                         <div
                           key={trackSlug}
-                          className="bg-white border border-gray-100 rounded-xl p-5 shadow-sm hover:shadow-md transition-all duration-200"
+                          className="border border-gray-100 rounded-xl p-5 bg-white shadow-sm hover:shadow-md transition-all duration-200"
                         >
-                          <div className="flex items-center gap-3 mb-2">
+                          <div className="flex items-start gap-4">
                             {StatusIcon}
-                            <h4 className="font-semibold text-gray-900">
-                              {fullName}
-                            </h4>
+                            <div className="space-y-1">
+                              <h4 className="text-xl font-semibold text-gray-900">
+                                {fullName}
+                              </h4>
+                              <p className="text-sm text-gray-600 leading-relaxed">
+                                {message}
+                              </p>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 leading-relaxed pl-8">
-                            {message}
-                          </p>
                         </div>
                       );
                     })}
