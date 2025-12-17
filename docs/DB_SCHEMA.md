@@ -75,6 +75,11 @@ create table events (
   event_staff_emails text,
   judging_end_time timestamptz,
 
+  -- Location (from MLH address)
+  city text,
+  state text,
+  country text,
+
   constraint events_slug_unique unique (slug),
   constraint events_start_before_end check (starts_at is null or ends_at is null or starts_at < ends_at)
 );

@@ -50,6 +50,9 @@ function mapMlhEventToEventInsert(event: MlhEventApi): EventInsert {
     program: event.program ?? null,
     event_format: event.event_format ?? null,
     type: event.type ?? null,
+    city: event.address?.city ?? null,
+    state: event.address?.state ?? null,
+    country: event.address?.country ?? null,
     website_url: (event.website_url as string | null | undefined) ?? null,
     registration_url:
       (event.registration_url as string | null | undefined) ?? null,

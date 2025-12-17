@@ -80,8 +80,8 @@ function EventImage({
 
   if (!logoUrl || imageError) {
     return (
-      <div className="w-20 h-20 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
-        <ImageOff className="w-10 h-10 text-gray-400" />
+      <div className="w-16 h-16 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
+        <ImageOff className="w-8 h-8 text-gray-400" />
       </div>
     );
   }
@@ -90,9 +90,9 @@ function EventImage({
     <Image
       src={logoUrl}
       alt={eventName}
-      width={80}
-      height={80}
-      className="w-20 h-20 rounded-lg object-cover bg-gray-100 shrink-0"
+      width={64}
+      height={64}
+      className="w-16 h-16 rounded-lg object-cover bg-gray-100 shrink-0"
       onError={() => setImageError(true)}
     />
   );
@@ -228,7 +228,7 @@ export function EventsPage() {
                     : "hover:border-primary"
                 }`}
               >
-                <div className="flex gap-4 p-6">
+                <div className="flex gap-3 p-4">
                   <div className="self-center shrink-0">
                     <EventImage
                       logoUrl={event.logo_url}
@@ -236,10 +236,13 @@ export function EventsPage() {
                     />
                   </div>
 
-                  <div className="flex-1 min-w-0 flex flex-col gap-3">
+                  <div className="flex-1 min-w-0 flex flex-col gap-2">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <CardTitle className="text-lg leading-tight line-clamp-2 min-h-[2.8125rem]">
+                      <div className="min-w-0 flex-1">
+                        <CardTitle
+                          className="text-lg leading-tight truncate"
+                          title={event.name}
+                        >
                           {event.name}
                         </CardTitle>
                       </div>
@@ -266,82 +269,73 @@ export function EventsPage() {
                       })()}
                     </div>
 
-                    {event.starts_at && event.ends_at ? (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Calendar className="w-4 h-4 shrink-0" />
-                        <span className="min-w-0 flex-1 truncate">
-                          {(() => {
-                            const start = new Date(event.starts_at);
-                            const end = new Date(event.ends_at);
-                            const startMonth = start.toLocaleDateString(
-                              "en-US",
-                              {
+                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                      <Calendar className="w-4 h-4 shrink-0" />
+                      <span className="min-w-0 flex-1 truncate">
+                        {event.starts_at && event.ends_at
+                          ? (() => {
+                              const start = new Date(event.starts_at);
+                              const end = new Date(event.ends_at);
+                              const startMonth = start.toLocaleDateString(
+                                "en-US",
+                                {
+                                  month: "short",
+                                },
+                              );
+                              const endMonth = end.toLocaleDateString("en-US", {
                                 month: "short",
-                              },
-                            );
-                            const endMonth = end.toLocaleDateString("en-US", {
-                              month: "short",
-                            });
-                            const startDay = start.getDate();
-                            const endDay = end.getDate();
-                            const year = start.getFullYear();
+                              });
+                              const startDay = start.getDate();
+                              const endDay = end.getDate();
+                              const year = start.getFullYear();
 
-                            if (startMonth === endMonth) {
-                              return `${startMonth} ${startDay} - ${endDay}, ${year}`;
-                            }
-                            return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
-                          })()}
-                        </span>
-                        {projectCount > 0 && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                                  <Folder className="w-4 h-4 shrink-0" />
-                                  <span className="font-medium">
-                                    {projectCount}
-                                  </span>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>Projects</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="flex items-center text-sm text-gray-600">
-                        {projectCount > 0 && (
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                                  <Folder className="w-4 h-4 shrink-0" />
-                                  <span className="font-medium">
-                                    {projectCount}
-                                  </span>
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>Projects</TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        )}
-                      </div>
-                    )}
+                              if (startMonth === endMonth) {
+                                return `${startMonth} ${startDay} - ${endDay}, ${year}`;
+                              }
+                              return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+                            })()
+                          : ""}
+                      </span>
+                    </div>
 
-                    {(event as { city?: string; country?: string }).city ||
-                    (event as { city?: string; country?: string }).country ? (
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin className="w-4 h-4 shrink-0" />
-                        <span className="truncate">
-                          {[
-                            (event as { city?: string }).city,
-                            (event as { country?: string }).country,
-                          ]
-                            .filter(Boolean)
-                            .join(", ")}
+                    <div className="flex items-center justify-between gap-3 text-sm text-gray-600">
+                      {event.city || event.state || event.country ? (
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          <MapPin className="w-4 h-4 shrink-0" />
+                          <span className="truncate">
+                            {[event.city, event.state, event.country]
+                              .filter(Boolean)
+                              .join(", ")}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 min-w-0 flex-1 invisible">
+                          <MapPin className="w-4 h-4 shrink-0" />
+                          <span className="truncate">—</span>
+                        </div>
+                      )}
+
+                      {projectCount > 0 ? (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <span className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                                <Folder className="w-4 h-4 shrink-0" />
+                                <span className="font-medium">
+                                  {projectCount}
+                                </span>
+                              </span>
+                            </TooltipTrigger>
+                            <TooltipContent>Projects</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 invisible">
+                          <Folder className="w-4 h-4 shrink-0" />
+                          <span className="font-medium">0</span>
                         </span>
-                      </div>
-                    ) : null}
+                      )}
+                    </div>
                   </div>
                 </div>
               </Card>
@@ -373,7 +367,7 @@ export function EventsPage() {
                       isEnded ? "opacity-60" : ""
                     }`}
                   >
-                    <div className="flex gap-4 p-6">
+                    <div className="flex gap-3 p-4">
                       <div className="self-center shrink-0">
                         <EventImage
                           logoUrl={event.logo_url}
@@ -381,10 +375,13 @@ export function EventsPage() {
                         />
                       </div>
 
-                      <div className="flex-1 min-w-0 flex flex-col gap-3">
+                      <div className="flex-1 min-w-0 flex flex-col gap-2">
                         <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <CardTitle className="text-lg leading-tight line-clamp-2 min-h-[2.8125rem]">
+                          <div className="min-w-0 flex-1">
+                            <CardTitle
+                              className="text-lg leading-tight truncate"
+                              title={event.name}
+                            >
                               {event.name}
                             </CardTitle>
                           </div>
@@ -393,89 +390,76 @@ export function EventsPage() {
                           </Badge>
                         </div>
 
-                        {event.starts_at && event.ends_at ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Calendar className="w-4 h-4 shrink-0" />
-                            <span className="min-w-0 flex-1 truncate">
-                              {(() => {
-                                const start = new Date(event.starts_at);
-                                const end = new Date(event.ends_at);
-                                const startMonth = start.toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                  },
-                                );
-                                const endMonth = end.toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    month: "short",
-                                  },
-                                );
-                                const startDay = start.getDate();
-                                const endDay = end.getDate();
-                                const year = start.getFullYear();
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Calendar className="w-4 h-4 shrink-0" />
+                          <span className="min-w-0 flex-1 truncate">
+                            {event.starts_at && event.ends_at
+                              ? (() => {
+                                  const start = new Date(event.starts_at);
+                                  const end = new Date(event.ends_at);
+                                  const startMonth = start.toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                    },
+                                  );
+                                  const endMonth = end.toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      month: "short",
+                                    },
+                                  );
+                                  const startDay = start.getDate();
+                                  const endDay = end.getDate();
+                                  const year = start.getFullYear();
 
-                                if (startMonth === endMonth) {
-                                  return `${startMonth} ${startDay} - ${endDay}, ${year}`;
-                                }
-                                return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
-                              })()}
-                            </span>
+                                  if (startMonth === endMonth) {
+                                    return `${startMonth} ${startDay} - ${endDay}, ${year}`;
+                                  }
+                                  return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${year}`;
+                                })()
+                              : ""}
+                          </span>
+                        </div>
 
-                            {projectCount > 0 && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                                      <Folder className="w-4 h-4 shrink-0" />
-                                      <span className="font-medium">
-                                        {projectCount}
-                                      </span>
+                        <div className="flex items-center justify-between gap-3 text-sm text-gray-600">
+                          {event.city || event.state || event.country ? (
+                            <div className="flex items-center gap-2 min-w-0 flex-1">
+                              <MapPin className="w-4 h-4 shrink-0" />
+                              <span className="truncate">
+                                {[event.city, event.state, event.country]
+                                  .filter(Boolean)
+                                  .join(", ")}
+                              </span>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 min-w-0 flex-1 invisible">
+                              <MapPin className="w-4 h-4 shrink-0" />
+                              <span className="truncate">—</span>
+                            </div>
+                          )}
+
+                          {projectCount > 0 ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <span className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400">
+                                    <Folder className="w-4 h-4 shrink-0" />
+                                    <span className="font-medium">
+                                      {projectCount}
                                     </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Projects</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                        ) : null}
-
-                        {!event.starts_at || !event.ends_at ? (
-                          <div className="flex items-center text-sm text-gray-600">
-                            {projectCount > 0 && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span className="inline-flex items-center gap-1 text-gray-600 dark:text-gray-400">
-                                      <Folder className="w-4 h-4 shrink-0" />
-                                      <span className="font-medium">
-                                        {projectCount}
-                                      </span>
-                                    </span>
-                                  </TooltipTrigger>
-                                  <TooltipContent>Projects</TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            )}
-                          </div>
-                        ) : null}
-
-                        {(event as { city?: string; country?: string }).city ||
-                        (event as { city?: string; country?: string })
-                          .country ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <MapPin className="w-4 h-4 shrink-0" />
-                            <span className="truncate">
-                              {[
-                                (event as { city?: string }).city,
-                                (event as { country?: string }).country,
-                              ]
-                                .filter(Boolean)
-                                .join(", ")}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>Projects</TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 invisible">
+                              <Folder className="w-4 h-4 shrink-0" />
+                              <span className="font-medium">0</span>
                             </span>
-                          </div>
-                        ) : null}
+                          )}
+                        </div>
                       </div>
                     </div>
                   </Card>

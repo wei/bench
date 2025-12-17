@@ -10,6 +10,17 @@ export type MlhEventApi = {
   id?: string;
   logo_url?: string | null;
   name: string;
+  address?: {
+    line1?: string | null;
+    line2?: string | null;
+    line3?: string | null;
+    city?: string | null;
+    state?: string | null;
+    postal_code?: string | null;
+    country?: string | null;
+    latitude?: number | null;
+    longitude?: number | null;
+  } | null;
   program?: string | null;
   registration_url?: string | null;
   slug: string;
