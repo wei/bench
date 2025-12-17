@@ -1,7 +1,16 @@
 "use client";
 
 import type { Table as TanstackTable } from "@tanstack/react-table";
-import { Filter, Play, RefreshCw, Search, Upload, X } from "lucide-react";
+import {
+  ChevronDown,
+  Download,
+  Filter,
+  Play,
+  RefreshCw,
+  Search,
+  Upload,
+  X,
+} from "lucide-react";
 import * as React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +38,8 @@ interface DataTableToolbarProps<TData> {
   onRunSelected?: (selectedIds: string[]) => void;
   onRerunFailed?: () => void;
   onImport?: () => void;
+  isJudgingView?: boolean;
+  onJudgingViewChange?: (enabled: boolean) => void;
   allProcessed?: boolean;
   hasNoProjects?: boolean;
   hasFailedProjects?: boolean;
@@ -71,6 +82,8 @@ export function DataTableToolbar<TData>({
   onRunSelected,
   onRerunFailed,
   onImport,
+  isJudgingView = false,
+  onJudgingViewChange,
   allProcessed = false,
   hasNoProjects = false,
   hasFailedProjects = false,
@@ -295,7 +308,7 @@ export function DataTableToolbar<TData>({
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
-            className="w-[250px]"
+            className="w-[250px] max-h-[60vh] overflow-y-auto"
             onCloseAutoFocus={(e) => {
               e.preventDefault();
             }}
@@ -626,7 +639,7 @@ export function DataTableToolbar<TData>({
         )}
       </div>
       <div className="flex items-center gap-2">
-        {(onRunAll || onRunSelected) && (
+        {!isJudgingView && (onRunAll || onRunSelected) && (
           <Button
             onClick={handleRunClick}
             variant={runButtonVariant === "default" ? "default" : "outline"}
@@ -638,11 +651,48 @@ export function DataTableToolbar<TData>({
               : "Run All Projects"}
           </Button>
         )}
-        {hasFailedProjects && onRerunFailed && (
+        {!isJudgingView && hasFailedProjects && onRerunFailed && (
           <Button onClick={onRerunFailed} variant="outline" className="gap-2">
             <RefreshCw className="h-4 w-4" />
             Rerun Failed ({failedProjectsCount})
           </Button>
+        )}
+        {/* View Mode Dropdown */}
+        {onJudgingViewChange && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-10 gap-2">
+                {isJudgingView ? "Judging View" : "Default View"}
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>View Mode</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuCheckboxItem
+                checked={!isJudgingView}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    onJudgingViewChange(false);
+                  }
+                }}
+                onSelect={(e) => e.preventDefault()}
+              >
+                Default View
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={isJudgingView}
+                onCheckedChange={(checked) => {
+                  if (checked) {
+                    onJudgingViewChange(true);
+                  }
+                }}
+                onSelect={(e) => e.preventDefault()}
+              >
+                Judging View
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         )}
         {onImport && (
           <Button
@@ -650,8 +700,17 @@ export function DataTableToolbar<TData>({
             variant={importVariant === "default" ? "default" : "outline"}
             className={importClassName}
           >
-            <Upload className="h-4 w-4" />
-            Import CSV
+            {isJudgingView ? (
+              <>
+                <Download className="h-4 w-4" />
+                Export CSV
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4" />
+                Import CSV
+              </>
+            )}
           </Button>
         )}
         <DropdownMenu>

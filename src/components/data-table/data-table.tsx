@@ -14,9 +14,14 @@ import { getCommonPinningStyles } from "@/lib/data-table";
 interface DataTableProps<TData> {
   table: TanstackTable<TData>;
   children?: React.ReactNode;
+  emptyStateMessage?: string;
 }
 
-export function DataTable<TData>({ table, children }: DataTableProps<TData>) {
+export function DataTable<TData>({
+  table,
+  children,
+  emptyStateMessage,
+}: DataTableProps<TData>) {
   return (
     <div className="data-table-container space-y-4 relative">
       {children}
@@ -99,7 +104,7 @@ export function DataTable<TData>({ table, children }: DataTableProps<TData>) {
                     colSpan={table.getAllColumns().length}
                     className="h-24 text-center"
                   >
-                    No results.
+                    {emptyStateMessage || "No results."}
                   </TableCell>
                 </TableRow>
               )}

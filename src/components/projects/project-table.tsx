@@ -37,6 +37,12 @@ import {
 } from "@/components/ui/tooltip";
 import { useDataTable } from "@/hooks/use-data-table";
 import { usePrizeCategories } from "@/hooks/use-prize-categories";
+import { exportProjectsToCSV } from "@/lib/csv-export";
+import {
+  type FilterState,
+  loadFilterState,
+  saveFilterState,
+} from "@/lib/filter-persistence";
 import {
   getPrizeStatusDisplay,
   getPrizeTracks,
@@ -226,6 +232,8 @@ interface ProjectTableProps {
   readonly onBatchRun: (projectIds: string[]) => void;
   readonly onImport: () => void;
   readonly onProjectClick: (project: Project) => void;
+  readonly onJudgingViewChange?: (isJudgingView: boolean) => void;
+  readonly eventId?: string | null;
 }
 
 // Status options for filtering
@@ -255,8 +263,25 @@ const complexityOptions = [
 ];
 
 // Helper function to check if a project is failed/invalid/errored
+// Note: For reruns, we explicitly EXCLUDE projects that are invalid because
+// they fall outside the event window or have no GitHub repository.
 function isFailedOrInvalidOrErrored(status: ProjectProcessingStatus): boolean {
-  return status === "errored" || status.startsWith("invalid:");
+  if (status === "errored") return true;
+
+  if (!status.startsWith("invalid:")) return false;
+
+  // Exclude these invalid types from "rerun failed" flows:
+  // - invalid:github_inaccessible (no GitHub repository / inaccessible)
+  // - invalid:rule_violation (e.g. commits outside event window)
+  if (
+    status === "invalid:github_inaccessible" ||
+    status === "invalid:rule_violation"
+  ) {
+    return false;
+  }
+
+  // Any other invalid status (if added in the future) is treated as rerunnable
+  return true;
 }
 
 export function ProjectTable({
@@ -265,16 +290,39 @@ export function ProjectTable({
   onBatchRun,
   onImport,
   onProjectClick,
+  onJudgingViewChange,
+  eventId,
 }: ProjectTableProps) {
   const { favoriteProjects, toggleFavoriteProject } = useStore();
-  const [title] = useQueryState("title", parseAsString.withDefault(""));
+
+  // Load persisted filter state when eventId changes
+  const persistedState = React.useMemo(() => {
+    return loadFilterState(eventId ?? null);
+  }, [eventId]);
+
+  // Whether we actually have any persisted filters for the current event
+  const hasPersistedState = React.useMemo(
+    () => Object.keys(persistedState ?? {}).length > 0,
+    [persistedState],
+  );
+
+  const [title, setTitle] = useQueryState("title", parseAsString);
+  const [isJudgingView, setIsJudgingView] = React.useState(
+    persistedState.isJudgingView ?? false,
+  );
+
+  // Notify parent when judging view changes
+  React.useEffect(() => {
+    onJudgingViewChange?.(isJudgingView);
+  }, [isJudgingView, onJudgingViewChange]);
+
   const [status, setStatus] = useQueryState(
     "status",
-    parseAsArrayOf(parseAsString).withDefault([]),
+    parseAsArrayOf(parseAsString),
   );
   const [complexity, setComplexity] = useQueryState(
     "complexity",
-    parseAsArrayOf(parseAsString).withDefault([]),
+    parseAsArrayOf(parseAsString),
   );
   const [prizeTrack, setPrizeTrack] = useQueryState(
     "prizeTrack",
@@ -282,7 +330,7 @@ export function ProjectTable({
   );
   const [techStack, setTechStack] = useQueryState(
     "techStack",
-    parseAsArrayOf(parseAsString).withDefault([]),
+    parseAsArrayOf(parseAsString),
   );
   const [techStackMode, setTechStackMode] = useQueryState(
     "techStackMode",
@@ -294,6 +342,100 @@ export function ProjectTable({
     "hasGithub",
     parseAsStringLiteral(["true", "false"] as const),
   );
+
+  // Check if URL has filter params - reactive to actual query state values
+  const hasUrlParams = React.useMemo(() => {
+    return !!(
+      title ||
+      (status && status.length > 0) ||
+      (complexity && complexity.length > 0) ||
+      prizeTrack ||
+      (techStack && techStack.length > 0) ||
+      hasGithub
+    );
+  }, [title, status, complexity, prizeTrack, techStack, hasGithub]);
+
+  // Track the last eventId we restored for and if we're currently restoring
+  const lastRestoredEventIdRef = React.useRef<string | null | undefined>(null);
+  const isRestoringRef = React.useRef(false);
+  const isInitialMountRef = React.useRef(true);
+  const hasInitializedRef = React.useRef(false);
+
+  // Restore persisted state when eventId changes and URL has no params
+  React.useEffect(() => {
+    // Only restore if eventId changed and we haven't restored yet for this eventId
+    if (
+      eventId !== lastRestoredEventIdRef.current &&
+      persistedState &&
+      !hasUrlParams
+    ) {
+      lastRestoredEventIdRef.current = eventId;
+      isRestoringRef.current = true;
+
+      // Restore all filter states from persisted state
+      if (persistedState.title) {
+        setTitle(persistedState.title);
+      }
+      if (persistedState.status && persistedState.status.length > 0) {
+        setStatus(persistedState.status);
+      }
+      if (persistedState.complexity && persistedState.complexity.length > 0) {
+        setComplexity(persistedState.complexity);
+      }
+      if (persistedState.prizeTrack) {
+        setPrizeTrack(persistedState.prizeTrack);
+      }
+      if (persistedState.techStack && persistedState.techStack.length > 0) {
+        setTechStack(persistedState.techStack);
+      }
+      if (persistedState.techStackMode) {
+        setTechStackMode(persistedState.techStackMode);
+      }
+      if (persistedState.hasGithub) {
+        setHasGithub(persistedState.hasGithub);
+      }
+      if (persistedState.isJudgingView !== undefined) {
+        setIsJudgingView(persistedState.isJudgingView);
+      }
+
+      // Mark restoration as complete after a brief delay to allow state updates
+      setTimeout(() => {
+        isRestoringRef.current = false;
+        hasInitializedRef.current = true;
+      }, 150);
+    } else if (eventId !== lastRestoredEventIdRef.current) {
+      // Reset restore flag when eventId changes
+      isRestoringRef.current = false;
+      lastRestoredEventIdRef.current = eventId;
+      // If we have URL params, mark as initialized immediately
+      if (hasUrlParams) {
+        hasInitializedRef.current = true;
+      }
+    }
+
+    // Mark initial mount as complete after first render
+    if (isInitialMountRef.current) {
+      setTimeout(() => {
+        isInitialMountRef.current = false;
+        // If no restoration happened and no URL params, mark as initialized
+        if (!hasPersistedState || !eventId || hasUrlParams) {
+          hasInitializedRef.current = true;
+        }
+      }, 300);
+    }
+  }, [
+    eventId,
+    persistedState,
+    hasPersistedState,
+    hasUrlParams,
+    setTitle,
+    setStatus,
+    setComplexity,
+    setPrizeTrack,
+    setTechStack,
+    setTechStackMode,
+    setHasGithub,
+  ]);
   const { prizeCategoryMap, prizeCategoryNameMap, prizeCategories } =
     usePrizeCategories();
 
@@ -342,12 +484,19 @@ export function ProjectTable({
   // Filter data client-side based on URL state
   const filteredData = React.useMemo(() => {
     return projects.filter((project) => {
+      // In judging view, only show favorited projects
+      if (isJudgingView && !favoriteProjects.includes(project.id)) {
+        return false;
+      }
+
       const matchesTitle =
+        !title ||
         title === "" ||
         project.project_title?.toLowerCase().includes(title.toLowerCase());
       const matchesStatus =
-        status.length === 0 || status.includes(project.status);
+        !status || status.length === 0 || status.includes(project.status);
       const matchesComplexity =
+        !complexity ||
         complexity.length === 0 ||
         (project.technical_complexity &&
           complexity.includes(project.technical_complexity));
@@ -358,6 +507,7 @@ export function ProjectTable({
 
       // Tech stack filter (intersection or union, case-insensitive)
       const matchesTechStack =
+        !techStack ||
         techStack.length === 0 ||
         (project.tech_stack &&
           project.tech_stack.length > 0 &&
@@ -391,6 +541,8 @@ export function ProjectTable({
     });
   }, [
     projects,
+    isJudgingView,
+    favoriteProjects,
     title,
     status,
     complexity,
@@ -412,7 +564,7 @@ export function ProjectTable({
       return prizeCategoryMap.get(slug) || slug;
     };
 
-    return [
+    const cols: ColumnDef<Project>[] = [
       {
         id: "select",
         header: ({ table }) => (
@@ -902,6 +1054,7 @@ export function ProjectTable({
         enableSorting: false,
       },
     ];
+    return cols;
   }, [
     onProjectClick,
     onRunAnalysis,
@@ -911,27 +1064,173 @@ export function ProjectTable({
     prizeCategoryNameMap,
   ]);
 
-  const { table } = useDataTable({
+  // Merge persisted column visibility with default visibility
+  const initialColumnVisibility = React.useMemo(() => {
+    const defaultVisibility: Record<string, boolean> = {
+      judging_score: isJudgingView,
+      notes: isJudgingView,
+      status: !isJudgingView,
+      actions: !isJudgingView,
+    };
+
+    // Merge with persisted visibility, but respect judging view defaults
+    if (persistedState.columnVisibility) {
+      return {
+        ...defaultVisibility,
+        ...persistedState.columnVisibility,
+        // Always respect judging view defaults for these columns
+        judging_score: isJudgingView,
+        notes: isJudgingView,
+        status: !isJudgingView,
+        actions: !isJudgingView,
+      };
+    }
+
+    return defaultVisibility;
+  }, [isJudgingView, persistedState.columnVisibility]);
+
+  const { table, sorting } = useDataTable({
     data: filteredData,
     columns,
     initialState: {
-      sorting: [],
+      // Use persisted sorting if available so sort direction is restored per event
+      sorting:
+        persistedState.sorting?.map((sort) => ({
+          id: sort.id,
+          desc: !!sort.desc,
+        })) ?? [],
       columnPinning: {
         left: ["select", "favorite"],
-        right: ["actions", "notes"],
+        right: isJudgingView ? ["notes"] : ["actions", "notes"],
       },
-      columnVisibility: {
-        judging_score: false,
-        notes: false,
-      },
+      columnVisibility: initialColumnVisibility,
     },
     getRowId: (row) => row.id,
   });
 
+  // Update column visibility when judging view changes
+  React.useEffect(() => {
+    table.getColumn("status")?.toggleVisibility(!isJudgingView);
+    table.getColumn("actions")?.toggleVisibility(!isJudgingView);
+    table.getColumn("judging_score")?.toggleVisibility(isJudgingView);
+    table.getColumn("notes")?.toggleVisibility(isJudgingView);
+  }, [isJudgingView, table]);
+
+  // Track the last eventId we restored column visibility for
+  const lastRestoredColumnVisibilityEventIdRef = React.useRef<
+    string | null | undefined
+  >(null);
+  // Track the last eventId we restored sorting for
+  const lastRestoredSortingEventIdRef = React.useRef<string | null | undefined>(
+    null,
+  );
+
+  // Restore column visibility from persisted state when eventId changes
+  React.useEffect(() => {
+    if (
+      eventId !== lastRestoredColumnVisibilityEventIdRef.current &&
+      persistedState.columnVisibility &&
+      table
+    ) {
+      lastRestoredColumnVisibilityEventIdRef.current = eventId;
+      Object.entries(persistedState.columnVisibility).forEach(
+        ([columnId, isVisible]) => {
+          // Don't override judging view defaults for these columns
+          if (
+            columnId !== "judging_score" &&
+            columnId !== "notes" &&
+            columnId !== "status" &&
+            columnId !== "actions"
+          ) {
+            table.getColumn(columnId)?.toggleVisibility(isVisible);
+          }
+        },
+      );
+    }
+  }, [eventId, persistedState.columnVisibility, table]);
+
+  // Restore sorting from persisted state when eventId changes
+  React.useEffect(() => {
+    if (
+      eventId !== lastRestoredSortingEventIdRef.current &&
+      persistedState.sorting &&
+      table
+    ) {
+      lastRestoredSortingEventIdRef.current = eventId;
+      // Apply the persisted sorting state to the table
+      table.setSorting(
+        persistedState.sorting.map((sort) => ({
+          id: sort.id,
+          desc: !!sort.desc,
+        })),
+      );
+    }
+  }, [eventId, persistedState.sorting, table]);
+
+  // Save filter state to sessionStorage whenever filters change
+  // Skip saving during initial restore to prevent overwriting with empty values
+  React.useEffect(() => {
+    if (!eventId) return;
+    // Don't save if we're currently restoring, on initial mount, or haven't initialized yet
+    if (
+      isRestoringRef.current ||
+      isInitialMountRef.current ||
+      !hasInitializedRef.current
+    ) {
+      return;
+    }
+
+    const filterState: FilterState = {
+      title: title || undefined,
+      status: status && status.length > 0 ? status : undefined,
+      complexity: complexity && complexity.length > 0 ? complexity : undefined,
+      prizeTrack: prizeTrack || undefined,
+      techStack: techStack && techStack.length > 0 ? techStack : undefined,
+      techStackMode,
+      hasGithub: hasGithub ?? undefined,
+      isJudgingView,
+      columnVisibility: table.getState().columnVisibility,
+      sorting,
+    };
+
+    saveFilterState(eventId, filterState);
+  }, [
+    eventId,
+    title,
+    status,
+    complexity,
+    prizeTrack,
+    techStack,
+    techStackMode,
+    hasGithub,
+    isJudgingView,
+    sorting,
+    table,
+  ]);
+
+  const handleExportCSV = React.useCallback(() => {
+    exportProjectsToCSV(filteredData);
+  }, [filteredData]);
+
   const handleRunAll = () => {
-    // Include ALL projects, even invalid or errored ones
-    const allIds = filteredData.map((p) => p.id);
-    onBatchRun(allIds);
+    // Run all projects that:
+    // - Have at least one prize track
+    // - Are NOT invalid because they fall outside the event window
+    //   or because they don't have a GitHub repository
+    const allIds = filteredData
+      .filter((p) => {
+        const hasPrizeTracks = getPrizeTracks(p).length > 0;
+        const isExcludedInvalidStatus =
+          p.status === "invalid:github_inaccessible" ||
+          p.status === "invalid:rule_violation";
+
+        return hasPrizeTracks && !isExcludedInvalidStatus;
+      })
+      .map((p) => p.id);
+
+    if (allIds.length > 0) {
+      onBatchRun(allIds);
+    }
   };
 
   // Get all failed/invalid/errored project IDs
@@ -952,9 +1251,15 @@ export function ProjectTable({
 
   const { showProcessingModal } = useStore();
 
+  // Check if we're in judging view with no results
+  const isJudgingViewWithNoResults = isJudgingView && filteredData.length === 0;
+  const emptyStateMessage = isJudgingViewWithNoResults
+    ? "No results found. Favorite a project by clicking the star icon for it to appear in judging view."
+    : undefined;
+
   return (
     <div className="space-y-4 relative">
-      <DataTable table={table}>
+      <DataTable table={table} emptyStateMessage={emptyStateMessage}>
         {/* Overlay background when processing - contained within DataTable */}
         {showProcessingModal && (
           <div className="absolute inset-0 bg-blue-50/20 dark:bg-blue-950/50 backdrop-blur-xs z-40 rounded-md pointer-events-none" />
@@ -969,22 +1274,24 @@ export function ProjectTable({
         >
           <DataTableToolbar
             table={table}
-            onRunAll={handleRunAll}
-            onRunSelected={(ids) => onBatchRun(ids)}
-            onRerunFailed={handleRerunFailed}
-            onImport={onImport}
+            onRunAll={isJudgingView ? undefined : handleRunAll}
+            onRunSelected={isJudgingView ? undefined : (ids) => onBatchRun(ids)}
+            onRerunFailed={isJudgingView ? undefined : handleRerunFailed}
+            onImport={isJudgingView ? handleExportCSV : onImport}
+            isJudgingView={isJudgingView}
+            onJudgingViewChange={setIsJudgingView}
             allProcessed={allProcessed}
             hasNoProjects={hasNoProjects}
             hasFailedProjects={hasFailedProjects}
             failedProjectsCount={failedInvalidErroredProjects.length}
-            status={status}
+            status={status ?? []}
             onStatusChange={setStatus}
-            complexity={complexity}
+            complexity={complexity ?? []}
             onComplexityChange={setComplexity}
             prizeTrack={prizeTrack ?? null}
             onPrizeTrackChange={(value) => setPrizeTrack(value)}
             prizeCategories={prizeCategories}
-            techStack={techStack}
+            techStack={techStack ?? []}
             onTechStackChange={setTechStack}
             techStackMode={techStackMode}
             onTechStackModeChange={setTechStackMode}
@@ -998,7 +1305,7 @@ export function ProjectTable({
               }
             }}
             allProjects={projects}
-            title={title}
+            title={title || ""}
           />
         </div>
 

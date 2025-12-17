@@ -42,7 +42,9 @@ export function ProjectsView({
   onProjectClick,
   eventId,
 }: ProjectsViewProps) {
-  const { projects, selectedEventId, events, updateEvent } = useStore();
+  const { projects, selectedEventId, events, updateEvent, favoriteProjects } =
+    useStore();
+  const [isJudgingView, setIsJudgingView] = React.useState(false);
   const [isDateDialogOpen, setIsDateDialogOpen] = useState(false);
   const [localStartTime, setLocalStartTime] = useState("");
   const [localEndTime, setLocalEndTime] = useState("");
@@ -167,12 +169,17 @@ export function ProjectsView({
 
   // Calculate completion percentage
   const completionPercentage = React.useMemo(() => {
-    if (filteredProjects.length === 0) return 0;
-    const scoredCount = filteredProjects.filter(
+    // In judging view, calculate based on favorited projects only
+    const projectsToCalculate = isJudgingView
+      ? filteredProjects.filter((p) => favoriteProjects.includes(p.id))
+      : filteredProjects;
+
+    if (projectsToCalculate.length === 0) return 0;
+    const scoredCount = projectsToCalculate.filter(
       (p) => p.judging_rating !== null && p.judging_rating !== undefined,
     ).length;
-    return Math.round((scoredCount / filteredProjects.length) * 100);
-  }, [filteredProjects]);
+    return Math.round((scoredCount / projectsToCalculate.length) * 100);
+  }, [filteredProjects, isJudgingView, favoriteProjects]);
 
   // Timer calculations with real-time updates
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -448,6 +455,8 @@ export function ProjectsView({
           onBatchRun={onBatchRun}
           onImport={onImport}
           onProjectClick={onProjectClick}
+          onJudgingViewChange={setIsJudgingView}
+          eventId={activeEventId}
         />
       </div>
     </div>
