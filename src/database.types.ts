@@ -20,6 +20,7 @@ export type Database = {
           created_at: string
           ends_at: string | null
           event_format: string | null
+          event_staff_emails: string | null
           id: string
           logo_url: string | null
           name: string
@@ -37,6 +38,7 @@ export type Database = {
           created_at?: string
           ends_at?: string | null
           event_format?: string | null
+          event_staff_emails?: string | null
           id?: string
           logo_url?: string | null
           name: string
@@ -54,6 +56,7 @@ export type Database = {
           created_at?: string
           ends_at?: string | null
           event_format?: string | null
+          event_staff_emails?: string | null
           id?: string
           logo_url?: string | null
           name?: string
@@ -74,7 +77,7 @@ export type Database = {
           find_words: string[]
           id: string
           name: string
-          short_name: string | null
+          short_name: string
           slug: string
           system_prompt: string
           updated_at: string
@@ -84,7 +87,7 @@ export type Database = {
           find_words?: string[]
           id?: string
           name: string
-          short_name?: string | null
+          short_name?: string
           slug: string
           system_prompt: string
           updated_at?: string
@@ -94,7 +97,7 @@ export type Database = {
           find_words?: string[]
           id?: string
           name?: string
-          short_name?: string | null
+          short_name?: string
           slug?: string
           system_prompt?: string
           updated_at?: string

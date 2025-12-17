@@ -6,6 +6,7 @@ export type MlhEventApi = {
   created_at?: number;
   ends_at?: number | null;
   event_format?: string | null;
+  event_staff_emails?: string | null;
   id?: string;
   logo_url?: string | null;
   name: string;
