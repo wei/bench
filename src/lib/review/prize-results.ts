@@ -63,7 +63,7 @@ export async function markPrizeProcessing(
     (acc, prizeSlug) => {
       acc[prizeSlug] = {
         status: "processing",
-        message: `Reviewing prize: ${prizeSlug}`,
+        message: `Reviewing...`,
       };
       return acc;
     },
