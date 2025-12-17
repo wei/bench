@@ -58,8 +58,8 @@ export function ProjectDetailPane({
   if (!project) return null;
 
   const codeReview = getCodeReview(project);
-  const canRunAnalysis =
-    project.status === "unprocessed" || project.status === "processed";
+  const disableAnalysis = project.status?.startsWith("processing") ?? false;
+  const rerunLabel = project.status === "unprocessed" ? "Run" : "Re-run";
 
   const handleCopyCopilotPrompt = async () => {
     try {
@@ -159,11 +159,11 @@ export function ProjectDetailPane({
                   <Button
                     size="sm"
                     onClick={onRerun}
-                    disabled={!canRunAnalysis}
-                    className="bg-(--mlh-blue) hover:bg-(--mlh-blue)/90 text-white gap-2 shadow-sm"
+                    disabled={disableAnalysis}
+                    variant="outline"
                   >
                     <Play className="h-4 w-4" />
-                    Re-run
+                    {rerunLabel}
                   </Button>
                 </div>
               </div>
