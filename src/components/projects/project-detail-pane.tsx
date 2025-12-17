@@ -16,6 +16,7 @@ import { GithubCopilotIcon } from "@/components/icons/github-copilot-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Markdown } from "@/components/ui/markdown";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
@@ -180,10 +181,10 @@ export function ProjectDetailPane({
                         {project.description_accuracy_level || "N/A"}
                       </span>
                     </div>
-                    <p className="text-sm text-gray-600 line-clamp-2">
+                    <Markdown className="text-gray-600 line-clamp-2">
                       {project.description_accuracy_message ||
                         "No details available"}
-                    </p>
+                    </Markdown>
                   </div>
                 </div>
               </div>
@@ -200,9 +201,9 @@ export function ProjectDetailPane({
                       <h3 className="text-xl font-semibold text-gray-900 mb-1">
                         Code Review
                       </h3>
-                      <p className="text-sm text-gray-700">
+                      <Markdown className="text-gray-700">
                         {codeReview.review_description}
-                      </p>
+                      </Markdown>
                     </div>
                   </div>
 
@@ -221,9 +222,9 @@ export function ProjectDetailPane({
                   </div>
 
                   {codeReview.additional_notes && (
-                    <div className="text-sm text-gray-600 italic border-t pt-3 mt-3">
+                    <Markdown className="text-gray-600 italic border-t pt-3 mt-3">
                       {codeReview.additional_notes}
-                    </div>
+                    </Markdown>
                   )}
                 </div>
               )}
@@ -326,9 +327,9 @@ export function ProjectDetailPane({
                                 <h4 className="text-xl font-semibold text-gray-900">
                                   {fullName}
                                 </h4>
-                                <p className="text-sm text-gray-600 leading-relaxed">
+                                <Markdown className="text-gray-600 leading-relaxed">
                                   {message}
-                                </p>
+                                </Markdown>
                               </div>
                             </div>
                           </div>

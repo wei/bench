@@ -22,11 +22,10 @@ Description Accuracy Level (description_accuracy_level):
 
 Output JSON ONLY with keys:
 - description_accuracy_level: one of [low, medium, high] - how well the code matches the description.
-- description_accuracy_message: short reason for the accuracy level (focus on what's present or missing).
+- description_accuracy_message: short reason for the accuracy level (focus on what's present or missing). Be extremely direct and concise and sacrifice grammar for the sake of concision, use markdown list format separated by new line.
 - technical_complexity: one of [invalid, beginner, intermediate, advanced].
-- technical_complexity_message: brief justification focusing on code evidence.
-- tech_stack: array of unique strings summarizing languages/frameworks/libs/services observed (e.g., ["Next.js", "TypeScript", "Supabase"]).
+- technical_complexity_message: brief justification focusing on code evidence in markdown list format, be extremely direct and concise and sacrifice grammar for the sake of concision, use markdown list format separated by new line.
+- tech_stack: array of unique strings summarizing languages/frameworks/libs/services observed (e.g., ["Next.js", "TypeScript", "Supabase"]) in the order of importance.
 
 Be terse and evidence-based. Do not invent features not present in code.
-When reporting information, be extremely direct and concise and sacrifice grammar for the sake of concision. Prefer list format.
 `.trim();

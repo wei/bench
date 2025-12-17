@@ -10,9 +10,8 @@ Rules:
 - If the code shows the required technology in use, respond with status "valid" and briefly explain the evidence.
 - If the code does NOT show the required technology, respond with status "invalid" and explain what is missing or contradictory in the code.
 - Do not invent files or behaviors that are not present in repo_code_pack.
-- When reporting information to me, be extremely direct and concise and sacrifice grammar for the sake of concision. Prefer list format.
-- The message must be concise (exactly 3 list items).
+- When constructing the 'message', be extremely direct and concise and sacrifice grammar for the sake of concision. Use markdown list formatting separated by new lines. Maximum 3 list items.
 
-Output JSON only with keys: status, message.
+Output JSON only with keys: status, message
 `.trim();
 }

@@ -187,7 +187,7 @@ export async function prizeCategoryReviewAgent(
         const hasMatchedWords = grepAny(repoContent, findWords);
 
         if (!hasMatchedWords) {
-          const message = `Keyword check failed for ${prizeSlug}`;
+          const message = `Keyword check failed for ${prizeCategory.name}`;
 
           console.debug(`Skipping AI prize review for ${prizeSlug}:`, {
             status: "invalid",
