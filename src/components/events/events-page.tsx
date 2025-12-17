@@ -17,6 +17,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useDashboardData } from "@/hooks/use-dashboard-data";
+import { useSession } from "@/hooks/use-session";
 import { useStore } from "@/lib/store";
 
 type EventStatus = {
@@ -99,6 +100,7 @@ function EventImage({
 
 export function EventsPage() {
   const { events, projects } = useStore();
+  const { user } = useSession();
   const [searchQuery, setSearchQuery] = useState("");
   const [showAllEvents, setShowAllEvents] = useState(() => {
     if (typeof window !== "undefined") {
@@ -108,8 +110,8 @@ export function EventsPage() {
     return false;
   });
 
-  // Fetch events with current filter setting
-  useDashboardData(null, showAllEvents);
+  // Fetch events and related dashboard data
+  useDashboardData(null);
 
   // Persist toggle state to localStorage
   const handleToggle = (value: boolean) => {
@@ -119,7 +121,16 @@ export function EventsPage() {
     }
   };
 
-  const eventsWithStatus = events
+  const normalizedUserEmail = user?.email?.trim().toLowerCase() ?? "";
+
+  const filteredEvents = events.filter((event) => {
+    if (showAllEvents || !normalizedUserEmail) return true;
+    const staffEmails = event.event_staff_emails;
+    if (!staffEmails) return false;
+    return staffEmails.toLowerCase().includes(normalizedUserEmail);
+  });
+
+  const eventsWithStatus = filteredEvents
     .filter((event) => {
       const query = searchQuery.trim().toLowerCase();
       if (!query) return true;

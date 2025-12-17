@@ -6,15 +6,9 @@ type Event = Tables<"events">;
 type Project = Tables<"projects">;
 type PrizeCategory = Tables<"prize_categories">;
 
-export async function getEvents(showAll = false): Promise<Event[]> {
+export async function getEvents(): Promise<Event[]> {
   try {
-    const params = new URLSearchParams();
-    if (showAll) {
-      params.set("showAll", "true");
-    }
-
-    const url = `/api/events${params.toString() ? `?${params.toString()}` : ""}`;
-    const response = await fetch(url);
+    const response = await fetch("/api/events");
 
     if (!response.ok) {
       throw new Error(`Failed to fetch events: ${response.status}`);
