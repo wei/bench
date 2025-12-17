@@ -1,9 +1,10 @@
 "use client";
 
-import { Gift, Info, Play } from "lucide-react";
+import { Code2, Gift, Info, Play } from "lucide-react";
 import { DevpostIcon } from "@/components/icons/devpost-icon";
 import { GithubIcon } from "@/components/icons/github-icon";
 import { StatusBadge } from "@/components/status/status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -19,6 +20,7 @@ import {
 } from "@/components/ui/tooltip";
 import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
+  getCodeReview,
   getPrizeStatusDisplay,
   getPrizeTracks,
   getStatusCircleColor,
@@ -45,6 +47,7 @@ export function ProjectDetailPane({
 
   if (!project) return null;
 
+  const codeReview = getCodeReview(project);
   const prizeResults = parsePrizeResults(project.prize_results);
   const canRunAnalysis =
     project.status === "unprocessed" || project.status === "processed";
@@ -170,6 +173,47 @@ export function ProjectDetailPane({
               </p>
             </div>
           </div>
+
+          {codeReview && (
+            <div className="border rounded-lg p-4 bg-linear-to-br from-purple-50 to-blue-50 dark:bg-[#171717]">
+              <div className="flex items-start gap-3 mb-4">
+                <div className="w-10 h-10 rounded-lg bg-(--mlh-purple) flex items-center justify-center shrink-0">
+                  <Code2 className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-semibold text-(--mlh-dark-grey) dark:text-white mb-1">
+                    Code Review Agent
+                  </h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-400">
+                    {codeReview.review_description}
+                  </p>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <p className="text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase mb-2">
+                  Tech Stack
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {codeReview.tech_stack.map((tech) => (
+                    <Badge
+                      key={tech}
+                      variant="secondary"
+                      className="bg-white dark:bg-[#262626]"
+                    >
+                      {tech}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {codeReview.additional_notes && (
+                <div className="text-sm text-gray-600 dark:text-gray-400 italic border-t pt-3 mt-3">
+                  {codeReview.additional_notes}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Prize Tracks (eligibility results) */}
           {(() => {
