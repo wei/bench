@@ -6,7 +6,10 @@ import { toast } from "sonner";
 import { getEvents, getPrizeCategories, getProjects } from "@/lib/data-service";
 import { useStore } from "@/lib/store";
 
-export function useDashboardData(activeEventId: string | null) {
+export function useDashboardData(
+  activeEventId: string | null,
+  showAllEvents = false,
+) {
   const { setEvents, setProjects, setPrizeCategories } = useStore();
 
   // 1. Fetch Events
@@ -15,8 +18,8 @@ export function useDashboardData(activeEventId: string | null) {
     isLoading: isLoadingEvents,
     error: eventsError,
   } = useQuery({
-    queryKey: ["events"],
-    queryFn: () => getEvents(),
+    queryKey: ["events", showAllEvents],
+    queryFn: () => getEvents(showAllEvents),
     enabled: true, // Always fetch projects, filter by event if needed
     staleTime: Infinity,
     refetchOnWindowFocus: false,

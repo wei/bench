@@ -6,17 +6,22 @@ type Event = Tables<"events">;
 type Project = Tables<"projects">;
 type PrizeCategory = Tables<"prize_categories">;
 
-export async function getEvents(): Promise<Event[]> {
-  const supabase = createClient();
-
+export async function getEvents(showAll = false): Promise<Event[]> {
   try {
-    const { data, error } = await supabase
-      .from("events")
-      .select("*")
-      .order("starts_at", { ascending: false });
+    const params = new URLSearchParams();
+    if (showAll) {
+      params.set("showAll", "true");
+    }
 
-    if (error) throw error;
-    return data || [];
+    const url = `/api/events${params.toString() ? `?${params.toString()}` : ""}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch events: ${response.status}`);
+    }
+
+    const json = await response.json();
+    return json.events || [];
   } catch (error) {
     console.error("[DataService] Failed to fetch events:", error);
     throw error;
