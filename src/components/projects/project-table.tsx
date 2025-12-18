@@ -1050,7 +1050,7 @@ export function ProjectTable({
       },
       {
         id: "prize_tracks",
-        header: "Prize Tracks",
+        header: "MLH Prize Tracks",
         cell: ({ row }) => {
           const project = row.original;
           const prizeTracks = getPrizeTracks(project);
