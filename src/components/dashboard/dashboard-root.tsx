@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
@@ -227,17 +227,25 @@ export function DashboardRoot({ children }: DashboardRootProps) {
     }
   };
 
+  const searchParams = useSearchParams();
+
   const handleGoToEvents = () => {
     setSelectedProject(null);
     setOverrideEventId(null);
-    router.push("/events");
+    const queryString = searchParams?.toString();
+    router.push(`/events${queryString ? `?${queryString}` : ""}`);
   };
 
   const handleProjectClick = (project: Project) => {
     setSelectedProject(project);
     const eventId = project.event_id || activeEventId;
     if (eventId) {
-      router.push(`/events/${eventId}/projects/${project.id}`);
+      const queryString = searchParams?.toString();
+      router.push(
+        `/events/${eventId}/projects/${project.id}${
+          queryString ? `?${queryString}` : ""
+        }`,
+      );
     }
     // Track recently viewed
     const { addRecentlyViewedProject } = useStore.getState();
@@ -307,7 +315,12 @@ export function DashboardRoot({ children }: DashboardRootProps) {
           if (!open) {
             setSelectedProject(null);
             if (activeEventId) {
-              router.push(`/events/${activeEventId}`);
+              const queryString = searchParams?.toString();
+              router.push(
+                `/events/${activeEventId}${
+                  queryString ? `?${queryString}` : ""
+                }`,
+              );
             } else {
               handleGoToEvents();
             }
