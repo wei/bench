@@ -2,7 +2,14 @@
 
 import Image from "next/image";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import {
+  createContext,
+  Suspense,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { toast } from "sonner";
 import { AppShell } from "@/components/app-shell";
 import { CSVImportDialog } from "@/components/projects/csv-import-dialog";
@@ -40,7 +47,7 @@ interface DashboardRootProps {
 }
 
 // DashboardRoot now behaves like a layout wrapper around all /events routes.
-export function DashboardRoot({ children }: DashboardRootProps) {
+function DashboardContent({ children }: DashboardRootProps) {
   const router = useRouter();
   const params = useParams<{
     eventId?: string | string[];
@@ -341,5 +348,30 @@ export function DashboardRoot({ children }: DashboardRootProps) {
         />
       )}
     </DashboardContext.Provider>
+  );
+}
+
+export function DashboardRoot({ children }: DashboardRootProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center flex flex-col items-center">
+            <div className="mx-auto mb-4">
+              <Image
+                src="/logo.svg"
+                width={48}
+                height={48}
+                alt="Bench Logo"
+                className="w-12 h-12 animate-spin mr-2"
+              />
+            </div>
+            <p className="text-muted-foreground">Loading Bench...</p>
+          </div>
+        </div>
+      }
+    >
+      <DashboardContent>{children}</DashboardContent>
+    </Suspense>
   );
 }
