@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import {
   parseAsArrayOf,
+  parseAsBoolean,
   parseAsString,
   parseAsStringLiteral,
   useQueryState,
@@ -339,9 +340,10 @@ export function ProjectTable({
       "union",
     ),
   );
-  const [hasGithub, setHasGithub] = useQueryState(
-    "hasGithub",
-    parseAsStringLiteral(["true", "false"] as const),
+  const [hasGithub, setHasGithub] = useQueryState("hasGithub", parseAsBoolean);
+
+  const [showMlhPrizesOnly, setShowMlhPrizesOnly] = React.useState(
+    persistedState.showMlhPrizesOnly ?? true,
   );
 
   const duplicateNameInfoById = React.useMemo(() => {
@@ -426,7 +428,7 @@ export function ProjectTable({
       (complexity && complexity.length > 0) ||
       prizeTrack ||
       (techStack && techStack.length > 0) ||
-      hasGithub
+      hasGithub === true
     );
   }, [title, status, complexity, prizeTrack, techStack, hasGithub]);
 
@@ -466,8 +468,13 @@ export function ProjectTable({
       if (persistedState.techStackMode) {
         setTechStackMode(persistedState.techStackMode);
       }
-      if (persistedState.hasGithub) {
+      if (persistedState.hasGithub !== undefined) {
         setHasGithub(persistedState.hasGithub);
+      }
+      if (persistedState.showMlhPrizesOnly !== undefined) {
+        setShowMlhPrizesOnly(persistedState.showMlhPrizesOnly);
+      } else {
+        setShowMlhPrizesOnly(true);
       }
       if (persistedState.isJudgingView !== undefined) {
         setIsJudgingView(persistedState.isJudgingView);
@@ -601,9 +608,11 @@ export function ProjectTable({
               )));
 
       // GitHub filter
-      const matchesGithub =
-        hasGithub === null ||
-        (hasGithub === "true" ? !!project.github_url : !project.github_url);
+      const matchesGithub = !hasGithub || !!project.github_url;
+
+      // MLH Prize filter - if enabled, only show projects that have at least one MLH prize
+      const matchesMlhPrize =
+        !showMlhPrizesOnly || getPrizeTracks(project).length > 0;
 
       return (
         matchesTitle &&
@@ -611,7 +620,8 @@ export function ProjectTable({
         matchesComplexity &&
         matchesPrizeTrack &&
         matchesTechStack &&
-        matchesGithub
+        matchesGithub &&
+        matchesMlhPrize
       );
     });
   }, [
@@ -625,6 +635,7 @@ export function ProjectTable({
     techStack,
     techStackMode,
     hasGithub,
+    showMlhPrizesOnly,
   ]);
 
   const handleToggleFavorite = React.useCallback(
@@ -857,7 +868,6 @@ export function ProjectTable({
         },
         meta: {
           label: "Project Title",
-          placeholder: "Search projects...",
           variant: "text" as const,
         },
         enableColumnFilter: true,
@@ -1060,6 +1070,10 @@ export function ProjectTable({
             <div className="flex flex-wrap gap-1 max-w-50">
               {prizeTracks.length > 0 ? (
                 prizeTracks
+                  .filter(
+                    (trackSlug) =>
+                      !showMlhPrizesOnly || prizeCategoryMap.has(trackSlug),
+                  )
                   .map((trackSlug) => {
                     const result = results[trackSlug];
                     const shortDisplayName = getPrizeDisplayName(trackSlug); // short_name or name fallback
@@ -1161,6 +1175,7 @@ export function ProjectTable({
     prizeCategoryMap,
     prizeCategoryNameMap,
     duplicateNameInfoById.get,
+    showMlhPrizesOnly,
   ]);
 
   // Merge persisted column visibility with default visibility
@@ -1287,6 +1302,7 @@ export function ProjectTable({
       techStack: techStack && techStack.length > 0 ? techStack : undefined,
       techStackMode,
       hasGithub: hasGithub ?? undefined,
+      showMlhPrizesOnly,
       isJudgingView,
       columnVisibility: table.getState().columnVisibility,
       sorting,
@@ -1302,6 +1318,7 @@ export function ProjectTable({
     techStack,
     techStackMode,
     hasGithub,
+    showMlhPrizesOnly,
     isJudgingView,
     sorting,
     table,
@@ -1395,14 +1412,12 @@ export function ProjectTable({
             techStackMode={techStackMode}
             onTechStackModeChange={setTechStackMode}
             uniqueTechStack={uniqueTechStack}
-            hasGithub={hasGithub ?? null}
+            hasGithub={hasGithub ?? undefined}
             onHasGithubChange={(value) => {
-              if (value === null) {
-                setHasGithub(null);
-              } else if (value === "true" || value === "false") {
-                setHasGithub(value);
-              }
+              setHasGithub(value || null);
             }}
+            showMlhPrizesOnly={showMlhPrizesOnly}
+            onShowMlhPrizesOnlyChange={setShowMlhPrizesOnly}
             allProjects={projects}
             title={title || ""}
           />

@@ -46,9 +46,9 @@ interface DataTableToolbarProps<TData> {
   failedProjectsCount?: number;
   // Filter props
   status?: string[];
-  onStatusChange?: (status: string[]) => void;
+  onStatusChange?: (status: string[] | null) => void;
   complexity?: string[];
-  onComplexityChange?: (complexity: string[]) => void;
+  onComplexityChange?: (complexity: string[] | null) => void;
   prizeTrack?: string | null;
   onPrizeTrackChange?: (prizeTrack: string | null) => void;
   prizeCategories?: Array<{
@@ -57,12 +57,14 @@ interface DataTableToolbarProps<TData> {
     short_name: string | null;
   }>;
   techStack?: string[];
-  onTechStackChange?: (techStack: string[]) => void;
+  onTechStackChange?: (techStack: string[] | null) => void;
   techStackMode?: "intersection" | "union";
   onTechStackModeChange?: (mode: "intersection" | "union") => void;
   uniqueTechStack?: string[];
-  hasGithub?: string | null;
-  onHasGithubChange?: (hasGithub: "true" | "false" | null) => void;
+  hasGithub?: boolean;
+  onHasGithubChange?: (hasGithub: boolean) => void;
+  showMlhPrizesOnly?: boolean;
+  onShowMlhPrizesOnlyChange?: (show: boolean) => void;
   // For calculating filter counts
   allProjects?: Array<{
     status: string;
@@ -100,8 +102,10 @@ export function DataTableToolbar<TData>({
   techStackMode = "union",
   onTechStackModeChange,
   uniqueTechStack = [],
-  hasGithub,
+  hasGithub = false,
   onHasGithubChange,
+  showMlhPrizesOnly = true,
+  onShowMlhPrizesOnlyChange,
   allProjects = [],
   title = "",
 }: DataTableToolbarProps<TData>) {
@@ -116,9 +120,20 @@ export function DataTableToolbar<TData>({
     complexity.length > 0 ||
     prizeTrack !== null ||
     techStack.length > 0 ||
-    hasGithub !== null;
+    hasGithub === true ||
+    // showMlhPrizesOnly === true ||  // Do not show reset button when showMlhPrizesOnly is true
+    false;
   const [globalFilter, setGlobalFilter] = React.useState("");
   const [techStackSearch, setTechStackSearch] = React.useState("");
+
+  const filterCount =
+    table.getState().columnFilters.length +
+    (status.length > 0 ? 1 : 0) +
+    (complexity.length > 0 ? 1 : 0) +
+    (prizeTrack !== null ? 1 : 0) +
+    (techStack.length > 0 ? 1 : 0) +
+    (hasGithub === true ? 1 : 0) +
+    (showMlhPrizesOnly ? 1 : 0);
 
   React.useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -131,11 +146,12 @@ export function DataTableToolbar<TData>({
     table.resetColumnFilters();
     setGlobalFilter("");
     setTechStackSearch("");
-    onStatusChange?.([]);
-    onComplexityChange?.([]);
+    onStatusChange?.(null);
+    onComplexityChange?.(null);
     onPrizeTrackChange?.(null);
-    onTechStackChange?.([]);
-    onHasGithubChange?.(null);
+    onTechStackChange?.(null);
+    onHasGithubChange?.(false);
+    onShowMlhPrizesOnlyChange?.(true);
   };
 
   // Filter tech stack list based on search
@@ -183,7 +199,8 @@ export function DataTableToolbar<TData>({
         | "complexity"
         | "prizeTrack"
         | "techStack"
-        | "github",
+        | "github"
+        | "mlhPrize",
       filterValue: string,
     ) => {
       return allProjects.filter((project) => {
@@ -232,13 +249,26 @@ export function DataTableToolbar<TData>({
 
         // For github: exclude current github filter, but include if it matches the value being counted
         const hasGithubUrl = !!project.github_url;
+        // Simplified GitHub filter logic: checked means MUST have GitHub, unchecked means ANY
+        // But for counting, if filterType is 'github', we assume we are counting for a specific state
+        // If filterType is NOT 'github', we apply the current `hasGithub` filter:
+        // if hasGithub is true, we only include projects with GitHub.
         const matchesGithub =
           filterType === "github"
             ? filterValue === "true"
               ? hasGithubUrl
               : !hasGithubUrl
-            : !hasGithub ||
-              (hasGithub === "true" ? hasGithubUrl : !hasGithubUrl);
+            : !hasGithub || hasGithubUrl;
+
+        // For MLH Prize: check if project has any standardized opt-in prizes
+        const hasMlhPrizes =
+          (project.standardized_opt_in_prizes?.length ?? 0) > 0;
+        const matchesMlhPrize =
+          filterType === "mlhPrize"
+            ? filterValue === "true"
+              ? hasMlhPrizes
+              : !hasMlhPrizes
+            : !showMlhPrizesOnly || hasMlhPrizes;
 
         return (
           matchesTitle &&
@@ -246,7 +276,8 @@ export function DataTableToolbar<TData>({
           matchesComplexity &&
           matchesPrizeTrack &&
           matchesTechStack &&
-          matchesGithub
+          matchesGithub &&
+          matchesMlhPrize
         );
       }).length;
     },
@@ -259,6 +290,7 @@ export function DataTableToolbar<TData>({
       techStack,
       techStackMode,
       hasGithub,
+      showMlhPrizesOnly,
       getProjectPrizeTracks,
     ],
   );
@@ -295,7 +327,7 @@ export function DataTableToolbar<TData>({
             placeholder="Search projects..."
             value={globalFilter}
             onChange={(e) => setGlobalFilter(e.target.value)}
-            className="h-10 pl-10 w-full lg:w-[400px]"
+            className="h-10 pl-10 w-full lg:w-[200px]"
           />
         </div>
         {/* Filters */}
@@ -303,7 +335,7 @@ export function DataTableToolbar<TData>({
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="h-10 gap-2">
               <Filter className="h-4 w-4" />
-              Filters
+              Filters {filterCount > 0 && `(${filterCount})`}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -316,109 +348,9 @@ export function DataTableToolbar<TData>({
             <DropdownMenuLabel>Filters</DropdownMenuLabel>
             <DropdownMenuSeparator />
 
-            {/* Status Filter */}
-            <DropdownMenuLabel className="text-xs font-normal">
-              Status
-            </DropdownMenuLabel>
-            {[
-              { label: "Unprocessed", value: "unprocessed" },
-              {
-                label: "Processing: Code Review",
-                value: "processing:code_review",
-              },
-              {
-                label: "Processing: Prize Category Review",
-                value: "processing:prize_category_review",
-              },
-              { label: "Processed", value: "processed" },
-              {
-                label: "Invalid: GitHub Inaccessible",
-                value: "invalid:github_inaccessible",
-              },
-              {
-                label: "Invalid: Rule Violation",
-                value: "invalid:rule_violation",
-              },
-              { label: "Errored", value: "errored" },
-            ].map((option) => {
-              const count = getFilterCounts("status", option.value);
-              return (
-                <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={status.includes(option.value)}
-                  onCheckedChange={(checked) => {
-                    if (onStatusChange) {
-                      if (checked) {
-                        onStatusChange([...status, option.value]);
-                      } else {
-                        onStatusChange(
-                          status.filter((s) => s !== option.value),
-                        );
-                      }
-                    }
-                  }}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <span className="flex items-center justify-between w-full">
-                    <span>{option.label}</span>
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
-                    >
-                      {count}
-                    </Badge>
-                  </span>
-                </DropdownMenuCheckboxItem>
-              );
-            })}
-
-            <DropdownMenuSeparator />
-
-            {/* Complexity Filter */}
-            <DropdownMenuLabel className="text-xs font-normal">
-              Complexity
-            </DropdownMenuLabel>
-            {[
-              { label: "Beginner", value: "beginner" },
-              { label: "Intermediate", value: "intermediate" },
-              { label: "Advanced", value: "advanced" },
-            ].map((option) => {
-              const count = getFilterCounts("complexity", option.value);
-              return (
-                <DropdownMenuCheckboxItem
-                  key={option.value}
-                  checked={complexity.includes(option.value)}
-                  onCheckedChange={(checked) => {
-                    if (onComplexityChange) {
-                      if (checked) {
-                        onComplexityChange([...complexity, option.value]);
-                      } else {
-                        onComplexityChange(
-                          complexity.filter((c) => c !== option.value),
-                        );
-                      }
-                    }
-                  }}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  <span className="flex items-center justify-between w-full">
-                    <span>{option.label}</span>
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
-                    >
-                      {count}
-                    </Badge>
-                  </span>
-                </DropdownMenuCheckboxItem>
-              );
-            })}
-
-            <DropdownMenuSeparator />
-
             {/* Prize Track Filter */}
             <DropdownMenuLabel className="text-xs font-normal">
-              Prize Track
+              MLH Prize Track
             </DropdownMenuLabel>
             <div className="px-2 py-1.5">
               <Select
@@ -453,6 +385,152 @@ export function DataTableToolbar<TData>({
                 </SelectContent>
               </Select>
             </div>
+
+            <DropdownMenuSeparator />
+
+            {/* Status Filter */}
+            <DropdownMenuLabel className="text-xs font-normal">
+              Status
+            </DropdownMenuLabel>
+            <div className="px-2 py-1.5">
+              <Select
+                value={status[0] || "all"}
+                onValueChange={(value) => {
+                  if (onStatusChange) {
+                    onStatusChange(value === "all" ? null : [value]);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 w-full">
+                  <SelectValue placeholder="All Statuses" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Statuses</SelectItem>
+                  {[
+                    { label: "Unprocessed", value: "unprocessed" },
+                    {
+                      label: "Processing: Code Review",
+                      value: "processing:code_review",
+                    },
+                    {
+                      label: "Processing: Prize Category Review",
+                      value: "processing:prize_category_review",
+                    },
+                    { label: "Processed", value: "processed" },
+                    {
+                      label: "Invalid: GitHub Inaccessible",
+                      value: "invalid:github_inaccessible",
+                    },
+                    {
+                      label: "Invalid: Rule Violation",
+                      value: "invalid:rule_violation",
+                    },
+                    { label: "Errored", value: "errored" },
+                  ].map((option) => {
+                    const count = getFilterCounts("status", option.value);
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex items-center justify-between w-full">
+                          <span>{option.label}</span>
+                          <Badge
+                            variant="secondary"
+                            className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
+                          >
+                            {count}
+                          </Badge>
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DropdownMenuSeparator />
+
+            {/* Complexity Filter */}
+            <DropdownMenuLabel className="text-xs font-normal">
+              Complexity
+            </DropdownMenuLabel>
+            <div className="px-2 py-1.5">
+              <Select
+                value={complexity[0] || "all"}
+                onValueChange={(value) => {
+                  if (onComplexityChange) {
+                    onComplexityChange(value === "all" ? null : [value]);
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 w-full">
+                  <SelectValue placeholder="All Complexities" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Complexities</SelectItem>
+                  {[
+                    { label: "Beginner", value: "beginner" },
+                    { label: "Intermediate", value: "intermediate" },
+                    { label: "Advanced", value: "advanced" },
+                  ].map((option) => {
+                    const count = getFilterCounts("complexity", option.value);
+                    return (
+                      <SelectItem key={option.value} value={option.value}>
+                        <span className="flex items-center justify-between w-full">
+                          <span>{option.label}</span>
+                          <Badge
+                            variant="secondary"
+                            className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
+                          >
+                            {count}
+                          </Badge>
+                        </span>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DropdownMenuSeparator />
+
+            {/* Misc Filters */}
+            <DropdownMenuCheckboxItem
+              checked={hasGithub}
+              onCheckedChange={(checked) => {
+                if (onHasGithubChange) {
+                  onHasGithubChange(!!checked);
+                }
+              }}
+              onSelect={(e) => e.preventDefault()}
+            >
+              <span className="flex items-center justify-between w-full">
+                <span>Has GitHub</span>
+                <Badge
+                  variant="secondary"
+                  className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
+                >
+                  {getFilterCounts("github", "true")}
+                </Badge>
+              </span>
+            </DropdownMenuCheckboxItem>
+            <DropdownMenuCheckboxItem
+              checked={showMlhPrizesOnly}
+              onCheckedChange={(checked) => {
+                if (onShowMlhPrizesOnlyChange) {
+                  onShowMlhPrizesOnlyChange(!!checked);
+                }
+              }}
+              onSelect={(e) => e.preventDefault()}
+            >
+              <span className="flex items-center justify-between w-full">
+                <span>MLH Prize Tracks Only</span>
+                <Badge
+                  variant="secondary"
+                  className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
+                >
+                  {getFilterCounts("mlhPrize", "true")}
+                </Badge>
+              </span>
+            </DropdownMenuCheckboxItem>
 
             <DropdownMenuSeparator />
 
@@ -510,8 +588,11 @@ export function DataTableToolbar<TData>({
                             if (checked) {
                               onTechStackChange([...techStack, tech]);
                             } else {
+                              const newVal = techStack.filter(
+                                (t) => t !== tech,
+                              );
                               onTechStackChange(
-                                techStack.filter((t) => t !== tech),
+                                newVal.length > 0 ? newVal : null,
                               );
                             }
                           }
@@ -547,81 +628,6 @@ export function DataTableToolbar<TData>({
                     No tech stacks found
                   </div>
                 )}
-              </div>
-            </div>
-
-            <DropdownMenuSeparator />
-
-            {/* GitHub Filter */}
-            <DropdownMenuLabel className="text-xs font-normal">
-              GitHub
-            </DropdownMenuLabel>
-            <div className="px-2 py-1.5 space-y-1">
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="has-github"
-                  checked={hasGithub === "true"}
-                  onCheckedChange={(checked) => {
-                    if (onHasGithubChange) {
-                      onHasGithubChange(checked ? "true" : null);
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const checkbox = document.getElementById(
-                      "has-github",
-                    ) as HTMLInputElement;
-                    if (checkbox) {
-                      checkbox.click();
-                    }
-                  }}
-                  className="text-sm cursor-pointer flex items-center justify-between flex-1 text-left bg-transparent border-none p-0"
-                >
-                  <span>Has GitHub</span>
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
-                  >
-                    {getFilterCounts("github", "true")}
-                  </Badge>
-                </button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="no-github"
-                  checked={hasGithub === "false"}
-                  onCheckedChange={(checked) => {
-                    if (onHasGithubChange) {
-                      onHasGithubChange(checked ? "false" : null);
-                    }
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const checkbox = document.getElementById(
-                      "no-github",
-                    ) as HTMLInputElement;
-                    if (checkbox) {
-                      checkbox.click();
-                    }
-                  }}
-                  className="text-sm cursor-pointer flex items-center justify-between flex-1 text-left bg-transparent border-none p-0"
-                >
-                  <span>No GitHub</span>
-                  <Badge
-                    variant="secondary"
-                    className="ml-2 h-4 min-w-4 px-1 text-[10px] font-normal"
-                  >
-                    {getFilterCounts("github", "false")}
-                  </Badge>
-                </button>
               </div>
             </div>
           </DropdownMenuContent>

@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/tooltip";
 import { usePrizeCategories } from "@/hooks/use-prize-categories";
 import {
-  getCodeReview,
   getPrizeStatusDisplay,
   getPrizeTracks,
   parsePrizeResults,
@@ -221,7 +220,6 @@ export function ProjectDetailPane({
 
   if (!project) return null;
 
-  const codeReview = getCodeReview(project);
   const disableAnalysis = project.status?.startsWith("processing") ?? false;
   const rerunLabel = project.status === "unprocessed" ? "Run" : "Re-run";
 
@@ -396,8 +394,7 @@ export function ProjectDetailPane({
             </div>
 
             {/* Code Review Agent Section */}
-            {/* Code Review Agent Section */}
-            {codeReview && (
+            {project.technical_complexity_message && (
               <div className="border border-purple-100 rounded-xl p-5 bg-linear-to-br from-purple-50 to-blue-50 shadow-sm">
                 <div className="flex items-start gap-4 mb-4">
                   <div className="w-10 h-10 rounded-lg bg-(--mlh-purple) flex items-center justify-center shrink-0">
@@ -408,14 +405,14 @@ export function ProjectDetailPane({
                       Code Review
                     </h3>
                     <Markdown className="text-gray-700">
-                      {codeReview.review_description}
+                      {project.technical_complexity_message}
                     </Markdown>
                   </div>
                 </div>
 
                 <div>
                   <div className="flex flex-wrap gap-2">
-                    {codeReview.tech_stack.map((tech) => (
+                    {project.tech_stack.map((tech) => (
                       <Badge
                         key={tech}
                         variant="secondary"
@@ -426,12 +423,6 @@ export function ProjectDetailPane({
                     ))}
                   </div>
                 </div>
-
-                {codeReview.additional_notes && (
-                  <Markdown className="text-gray-600 italic border-t pt-3 mt-3">
-                    {codeReview.additional_notes}
-                  </Markdown>
-                )}
               </div>
             )}
 

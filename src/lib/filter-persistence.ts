@@ -10,7 +10,8 @@ export interface FilterState {
   prizeTrack?: string | null;
   techStack?: string[];
   techStackMode?: "intersection" | "union";
-  hasGithub?: "true" | "false" | null;
+  hasGithub?: boolean;
+  showMlhPrizesOnly?: boolean;
   isJudgingView?: boolean;
   columnVisibility?: Record<string, boolean>;
   // Sorting state from @tanstack/react-table (id and direction per column)

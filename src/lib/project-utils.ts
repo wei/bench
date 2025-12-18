@@ -1,40 +1,6 @@
 import type { PrizeReviewResult } from "@/lib/review/prize-results";
 import type { Project, ProjectProcessingStatus } from "@/lib/store";
 
-// Get code_review from csv_row or technical_complexity_message
-export function getCodeReview(project: Project): {
-  tech_stack: string[];
-  review_description: string;
-  additional_notes?: string;
-} | null {
-  if (
-    project.csv_row &&
-    typeof project.csv_row === "object" &&
-    "code_review" in project.csv_row
-  ) {
-    const review = project.csv_row.code_review;
-    if (
-      review &&
-      typeof review === "object" &&
-      "review_description" in review
-    ) {
-      return review as {
-        tech_stack: string[];
-        review_description: string;
-        additional_notes?: string;
-      };
-    }
-  }
-  // fallback to technical_complexity_message if available
-  if (project.technical_complexity_message) {
-    return {
-      tech_stack: project.tech_stack,
-      review_description: project.technical_complexity_message,
-    };
-  }
-  return null;
-}
-
 // Parse prize_results
 export function parsePrizeResults(
   prizeResults: unknown,
@@ -72,22 +38,10 @@ export function getPrizeStatusDisplay(
   return { status, message };
 }
 
-// Get prize_tracks from standardized_opt_in_prizes or csv_row
+// Get prize_tracks from standardized_opt_in_prizes
 export function getPrizeTracks(project: Project): string[] {
-  if (project.standardized_opt_in_prizes?.length > 0) {
+  if ((project.standardized_opt_in_prizes?.length ?? 0) > 0) {
     return project.standardized_opt_in_prizes;
-  }
-  if (
-    project.csv_row &&
-    typeof project.csv_row === "object" &&
-    "prize_tracks" in project.csv_row
-  ) {
-    const tracks = project.csv_row.prize_tracks;
-    if (Array.isArray(tracks)) {
-      return tracks.filter(
-        (track): track is string => typeof track === "string",
-      );
-    }
   }
   return [];
 }
