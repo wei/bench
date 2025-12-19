@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import Papa from "papaparse";
 
 import type { Database } from "@/database.types";
+import { getGithubUrls } from "@/lib/github/utils";
 import { createClient } from "@/lib/supabase/server";
 
 type ProjectInsert = Database["public"]["Tables"]["projects"]["Insert"];
@@ -195,7 +196,8 @@ function mapRecordToProject(
   const tryItOutAllLinks = parseList(tryItOutRaw).filter((url) => isUrl(url));
   project.try_it_out_links = tryItOutAllLinks;
 
-  project.github_url = tryItOutAllLinks.find((url) => isGithubUrl(url)) || null;
+  const githubUrls = getGithubUrls(tryItOutRaw);
+  project.github_url = githubUrls[0] || null;
 
   const additionalTeamMembers = parseNumber(
     record["Additional Team Member Count"] ?? "",
@@ -253,17 +255,6 @@ function parseList(value: string) {
     .split(/[\n,]+/)
     .map((item) => item.trim())
     .filter(Boolean);
-}
-
-function isGithubUrl(value: string) {
-  if (!value.trim()) return false;
-  const prefixed = value.startsWith("http") ? value : `https://${value}`;
-  try {
-    const url = new URL(prefixed);
-    return url.hostname.toLowerCase().includes("github.com");
-  } catch {
-    return false;
-  }
 }
 
 function matchPrizeCategories(

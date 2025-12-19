@@ -51,25 +51,10 @@ type Commit = {
   };
 };
 
+import { parseGithubRepo as parseGithubRepoUtil } from "@/lib/github/utils";
+
 export function parseGithubRepo(url: string): GithubRepoInfo | null {
-  if (!url.trim()) return null;
-
-  const normalized = url.startsWith("http") ? url : `https://${url}`;
-
-  try {
-    const parsed = new URL(normalized);
-
-    if (!parsed.hostname.toLowerCase().includes("github.com")) {
-      return null;
-    }
-
-    const [owner, repo] = parsed.pathname.replace(/^\//, "").split("/");
-    if (!owner || !repo) return null;
-
-    return { owner, repo: repo.replace(/\.git$/, "") };
-  } catch {
-    return null;
-  }
+  return parseGithubRepoUtil(url);
 }
 
 export async function isRepoAccessible(github: Octokit, repo: GithubRepoInfo) {
