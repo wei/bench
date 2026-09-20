@@ -253,7 +253,7 @@ export async function prizeCategoryReviewAgent(
     const { object } = await generateObject({
       // model: google("gemini-2.5-flash"),
       // model: doai.chat(getDoAIModelName()),
-      model: openrouter("google/gemini-2.5-flash"),
+      model: openrouter("~google/gemini-flash-latest"),
       schema,
       system: systemPrompt,
       prompt,

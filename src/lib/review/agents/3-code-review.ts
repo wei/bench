@@ -323,7 +323,7 @@ export const codeReviewAgent: ReviewAgent<
 
   try {
     // const doai = getDoAI();
-    const model = openrouter("google/gemini-2.5-flash");
+    const model = openrouter("~google/gemini-flash-latest");
     const data = await generateObjectWithRetry({
       model,
       schema: codeReviewSchema,
